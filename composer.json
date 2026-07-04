@@ -1,0 +1,27 @@
+{
+    "name": "doiftrue/mini-autowire-container",
+    "description": "A tiny single-file PSR-11 compatible autowire DI container for PHP, with no dependencies.",
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Timur Kamaev",
+            "email": "tnkamaev@gmail.com",
+            "homepage": "https://wp-kama.com/"
+        }
+    ],
+    "scripts": {
+        "phpunit": "./vendor/bin/phpunit"
+    },
+    "require": {
+        "php": ">=7.4"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "~13.2.2"
+    },
+    "autoload": {
+        "psr-4": {
+            "Kama\\MiniContainer\\": ""
+        }
+    }
+}

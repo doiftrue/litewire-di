@@ -1,98 +1,104 @@
 # Mini Autowire Container
 
-> ![INFO]
-> Inspired by [Simple DIC](https://github.com/renakdup/simple-dic)
-> 
-> Наш контейнер отличается:
-> 1.
-> set() принимает только объекты или class-string (не примитивы)
-> 2.
-> get() — singleton, всегда кеширует
-> 3.
-> make() — всегда новый экземпляр, поддерживает runtime-параметры
-> 4.
-> Factory в make() — автовайринг параметров closure (не просто $container)
-> 5.
-> Factory в get() — closure получает $this (контейнер)
-
-
 A tiny single-file autowire DI container for PHP and WordPress applications.
 
-It is designed for small projects, plugins, themes, and libraries where a full-featured container like Symfony DI or PHP-DI would be too much.
 
-## Features
+Design goals
+------------
+This container is intentionally small. It is designed for small projects, plugins, themes, and libraries where a full-featured container like Symfony DI or PHP-DI would be too much.
 
+It is not trying to replace Symfony DI, PHP-DI, Laravel Container, or other full-featured dependency injection containers. It is useful when you need simple autowiring without configuration files, compiled cache, service providers, tags, scopes, scalar parameter storage, or framework integration.
+
+The main idea is to keep application code close to common DI container concepts (PSR-11):
+
+```php
+$container->get( Service::class );
+$container->has( Service::class );
+```
+
+For larger projects, this makes migration to a bigger container easier.
+
+
+### Container API
+```php
+$container->set( string $id, object|Closure|string $service ): void;
+$container->has( string $id ): bool;
+$container->get( string $id );
+$container->make( string $id, array $parameters = [] );
+```
+
+
+
+
+
+Features
+--------
 * Single PHP file
 * No dependencies
 * Autowiring by constructor type hints
-* Shared services via `get()`
-* New instances via `make()`
+* Shared services via get()
+* New instances via make()
 * Factory closures
-* Runtime constructor parameters
-* Object-only resolved services
-* Reflection static (runtime) cache
+* Runtime constructor parameters for make()
+* Reflection cache
+* Object-first design
+* Convenient for WordPress plugins and themes
 
-## Installation
 
-Copy `Container.php` into your project and load it manually or through your autoloader.
 
-```php
-use Kama\MiniContainer\Container;
-```
-
-## Basic usage
+Basic usage
+-----------
+`Logger` will be created automatically because it is declared as a constructor dependency.
 
 ```php
-use Kama\MiniContainer\Container;
-
-$container = new Container();
-
-$service = $container->get( Some_Service::class );
-```
-
-If `Some_Service` has constructor dependencies with class type hints, they will be resolved automatically.
-
-```php
-final class Some_Service {
-
-	public function __construct(
-		private Logger $logger,
-		private Repository $repository
-	) {}
+class Logger {
+	public function log( string $message ): void {
+		error_log( $message );
+	}
 }
 
-$service = $container->get( Some_Service::class );
+class Service {
+	public function __construct( 
+		private Logger $logger
+	) {}
+
+	public function run(): void {
+		$this->logger->log( 'Service started.' );
+	}
+}
+
+$container = new Container();
+$service = $container->get( Service::class );
+$service->run();
 ```
 
-## Register an existing object
+
+### WordPress example
 
 ```php
-$container->set( Logger::class, new Logger() );
+$container = new Container();
 
-$logger = $container->get( Logger::class );
-```
-
-## Register an interface implementation
-
-```php
-$container->set( Logger_Interface::class, File_Logger::class );
-
-$logger = $container->get( Logger_Interface::class );
-```
-
-## Register a factory
-
-```php
-$container->set( Client::class, static function (): Client {
-	return new Client( 'https://example.com' );
+// Register factory for Plugin class
+$container->set( Plugin::class, function () {
+	return new Plugin( __FILE__ );
 } );
 
-$client = $container->get( Client::class );
+add_action( 'plugins_loaded', function () use ( $container ) {
+	$container->get( Plugin::class )->init();
+} );
 ```
 
-Factories must return an object.
 
-## Shared services with get()
+get()
+-----
+Gets a shared service instance – singleton. 
+
+If the service was already created, the same object is returned.
+
+### get() – Autowiring 
+See basic usage above.
+
+### get() – Shared services
 
 `get()` resolves a service and stores it in the container. The next call returns the same instance.
 
@@ -103,8 +109,96 @@ $b = $container->get( Some_Service::class );
 var_dump( $a === $b ); // true
 ```
 
-## New instances with make()
+### get() – Scalar values
 
+Required scalar values cannot be resolved automatically – RuntimeException will be thrown.
+
+```php
+final class Config {
+	public function __construct(
+		private string $path
+	) {}
+}
+
+$container->get( Config::class ); // RuntimeException
+```
+
+Use `make()` with named parameters:
+```php
+$config = $container->make( Config::class, [
+	'path' => __DIR__ . '/config.php',
+] );
+```
+
+Optional scalar values are supported:
+```php
+final class Config {
+	public function __construct(
+		private string $path = 'config.php'
+	) {}
+}
+
+$config = $container->get( Config::class ); // no error
+```
+
+
+has()
+-----
+Checks whether the service was registered or already resolved.
+
+```php
+$container->has( Service::class ); // true if registered or resolved
+$container->has( 'Unknown' );      // false
+```
+
+
+set()
+-----
+Registers a service definition.
+
+Accepted values:
+
+* existing object - `new MyClass()`
+* class name - `MyClass::class`
+* closure factory - `static function () { return new MyClass(); }`
+
+
+### set() – Register an existing object
+
+`$logger` is an existing instance of `Logger`.
+```php
+$container->set( Logger::class, $logger );
+$service = $container->get( Service::class );
+```
+
+
+### set() – Register an interface implementation
+
+```php
+$container->set( Logger_Interface::class, File_Logger::class );
+$logger = $container->get( Logger_Interface::class );
+```
+
+
+### set() – Register a factory
+
+Factories must return an object.
+```php
+$container->set( Client::class, static function (): Client {
+	return new Client( 'https://example.com' );
+} );
+
+$client = $container->get( Client::class );
+```
+
+
+make()
+------
+Creates a fresh object from a registered definition or class name. 
+
+Unlike `get()`, it does not store the created object in the container.
+
+### make() - New instances
 `make()` creates a new object and does not save it in the container.
 
 ```php
@@ -116,13 +210,15 @@ var_dump( $a === $b ); // false
 
 This is useful for stateful objects, DTOs, handlers, commands, forms, and other short-lived objects.
 
-## Runtime parameters
-
+### make() - Runtime parameters
 Named runtime parameters can be passed to `make()`.
 
-```php
-final class Mailer {
+Class dependencies are still autowired automatically. Scalar values must be passed manually or have default values.
 
+Such a call may also be treated as a factory that can be mocked in tests.
+
+```php
+class Mailer {
 	public function __construct(
 		private Logger $logger,
 		private string $from
@@ -134,88 +230,38 @@ $mailer = $container->make( Mailer::class, [
 ] );
 ```
 
-Class dependencies are still autowired automatically. Scalar values must be passed manually or have default values.
 
-## Default values
+Comparison with other containers
+---------------
 
-Optional scalar constructor parameters are resolved from their default values.
+| Container              | Deps |     PSR-11 | Autowiring |           Shared services |   New instance method | Scalars | Config |
+|------------------------|-----:|-----------:|-----------:|--------------------------:|----------------------:|--------:|-------:|
+| Mini Container         |   no | compatible |        yes |                   `get()` |              `make()` | runtime |     no |
+| PHP-DI                 |  yes |        yes |        yes |                   `get()` |              `make()` |     yes |    yes |
+| Symfony DI             |  yes |        yes |        yes |                   `get()` |    factories/services |     yes |    yes |
+| Laravel Container      |  yes | partly/yes |        yes | `singleton(), instance()` |              `make()` |     yes |    yes |
+| Laminas ServiceManager |  yes |        yes |        yes |           shared services |             `build()` |     yes |    yes |
+| Pimple                 |  yes |         no |         no |          default behavior |           `factory()` |     yes |    yes |
+| League Container       |  yes |        yes |        yes |             `addShared()` | definitions/factories |     yes |    yes |
+| Yii DI Container       |  yes |         no |        yes |          `setSingleton()` |               `get()` |     yes |    yes |
+| Nette DI               |  yes | no/adapter |        yes |        generated services |   generated factories |     yes |    yes |
 
-```php
-final class Api_Client {
+Best for:
 
-	public function __construct(
-		private Logger $logger,
-		private int $timeout = 10
-	) {}
-}
+* `Mini Container` – simple PHP apps, WP plugins
+* `SimpleDic` – simple PHP apps, WP plugins
+* `PHP-DI` – medium and large apps
+* `Symfony DI` – Symfony apps, compiled container
+* `Laravel Container` – Laravel apps
+* `Laminas ServiceManager` – Laminas/Mezzio apps
+* `Pimple` – small explicit service containers
+* `League Container` – framework-agnostic DI
+* `Yii DI Container` – Yii apps
+* `Nette DI` – Nette apps
 
-$client = $container->get( Api_Client::class );
-```
 
-## Container API
-
-```php
-$container->set( string $id, object|Closure|string $service ): void;
-
-$container->has( string $id ): bool;
-
-$container->get( string $id );
-
-$container->make( string $id, array $parameters = [] );
-```
-
-### `set()`
-
-Registers a service definition.
-
-The definition can be:
-
-* existing object
-* class name
-* closure factory
-
-### `has()`
-
-Checks whether the service was registered or already resolved.
-
-### `get()`
-
-Returns a shared service instance. If the service was not created yet, it will be resolved and cached.
-
-### `make()`
-
-Creates a fresh object from a definition or class name. The result is not cached.
-
-## WordPress example
-
-```php
-use Kama\MiniContainer\Container;
-
-$container = new Container();
-
-$container->set( Plugin::class, Plugin::class );
-
-add_action( 'plugins_loaded', static function () use ( $container ) {
-	$container->get( Plugin::class )->init();
-} );
-```
-
-## Design goals
-
-This container is intentionally small.
-
-It is not trying to replace Symfony DI, PHP-DI, Laravel Container, or other full-featured dependency injection containers. It is useful when you need simple autowiring without configuration files, compiled cache, service providers, tags, scopes, scalar parameter storage, or framework integration.
-
-The main idea is to keep application code close to common DI container concepts:
-
-```php
-$container->get( Service::class );
-$container->has( Service::class );
-```
-
-For larger projects, this makes migration to a bigger container easier.
-
-## Limitations
+Limitations
+-----------
 
 * No PSR-11 interface dependency included
 * No compiled container
@@ -223,10 +269,16 @@ For larger projects, this makes migration to a bigger container easier.
 * No scopes
 * No tags
 * No scalar parameter storage
-* No circular dependency detection
 * No union/intersection type resolving
 * Required scalar constructor parameters must be provided manually
 
-## License
 
-MIT
+
+> [!NOTE]
+> Inspired by [Simple DIC](https://github.com/renakdup/simple-dic)
+>
+> This container differs by:
+> 1. `set()` accepts only objects or class-strings (no primitives)
+> 3. `make()` — always creates a new instance, supports runtime parameters
+> 4. Factory in `make()` — closure parameters are autowired (not just `$container`)
+> 5. Factory in `get()` — closure receives `$this` (the container)

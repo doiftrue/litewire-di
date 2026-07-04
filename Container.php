@@ -1,8 +1,7 @@
 <?php // phpcs:ignoreFile
 /**
- * DI Container in one file for WordPress and PHP Applications.
- * Supports autowiring and allows you to easily use it in your simple PHP applications and
- * especially convenient for WordPress plugins and themes and others.
+ * Single-file DI Container with autowiring for PHP applications.
+ * PSR-11 compatible. No dependencies. Especially handy for WordPress plugins and themes.
  *
  * License: MIT License
  *
@@ -10,7 +9,7 @@
  * Author Site: https://wp-kama.com/
  * Original Idea: Andrei Pisarevskii (https://github.com/renakdup/simple-dic)
  *
- * Version: 1.0.0
+ * Version: 1.1.0
  */
 
 namespace Kama\MiniContainer;
@@ -45,6 +44,11 @@ class Container {
 	 */
 	protected array $reflection_cache = [];
 
+	/**
+	 * Classes currently being resolved (cycle detection).
+	 */
+	protected array $resolving = [];
+
 
 	/**
 	 * Makes the container itself available as a dependency.
@@ -66,7 +70,7 @@ class Container {
 	/**
 	 * Registers a service. The service may be an existing object,
 	 * a class name, or a factory (closure) that creates it.
-	 * Replacing existing service clears all previously created cache.
+	 * Replacing an existing service clears all previously created caches.
 	 *
 	 * @param class-string                $id      Identifier of the entry to look for.
 	 * @param object|Closure|class-string $service Service definition or class name or factory.
@@ -87,7 +91,7 @@ class Container {
 
 	/**
 	 * Loads a registered service or automatically creates the requested class.
-	 * Caches the resolved service for subsequent calls.
+	 * Caches the resolved service for later calls.
 	 *
 	 * @template T of object
 	 * @param class-string<T> $id Identifier of the entry to look for.
@@ -106,7 +110,7 @@ class Container {
 	}
 
 	/**
-	 * Creates an class instance from a registered definition or class name.
+	 * Creates a class instance from a registered definition or class name.
 	 * Unlike get(), it does not add the result to the cache.
 	 * Named parameters can be used to provide specific values for constructor arguments.
 	 *
@@ -143,8 +147,7 @@ class Container {
 			return $this->resolve_class( $definition, $parameters );
 		}
 
-		$message = "Definition `$id` could not be resolved because class not exist.";
-		throw new RuntimeException( $message );
+		throw new RuntimeException( "Definition `$id` could not be resolved because class not exist." );
 	}
 
 	/**
@@ -187,6 +190,13 @@ class Container {
 	 * @throws RuntimeException
 	 */
 	protected function resolve_class( string $class, array $runtime_params = [] ): object {
+		if ( isset( $this->resolving[ $class ] ) ) {
+			$chain = implode( ' → ', array_keys( $this->resolving ) ) . " → $class";
+			throw new RuntimeException( "Circular dependency detected: $chain" );
+		}
+
+		$this->resolving[ $class ] = true;
+
 		try {
 			$reflection = $this->reflection_cache[ $class ] ??= new ReflectionClass( $class );
 
@@ -206,6 +216,9 @@ class Container {
 			throw new RuntimeException(
 				"Service `$class` could not be resolved due the reflection issue: `{$e->getMessage()}`"
 			);
+		}
+		finally {
+			unset( $this->resolving[ $class ] );
 		}
 
 		return new $class( ...$resolved_params );

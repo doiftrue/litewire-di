@@ -198,6 +198,14 @@ Creates a fresh object from a registered definition or class name.
 
 Unlike `get()`, it does not store the created object in the container.
 
+> [!NOTE]
+> Definitions registered as existing object instances cannot be used with `make()`;
+use `get()` to retrieve those instances.
+> 
+> Class-string definitions are instantiated again and closure factories are invoked on every call.
+> 
+> Factories must return an object, but are responsible for whether that object is a new instance.
+
 ### make() - New instances
 `make()` creates a new object and does not save it in the container.
 
@@ -279,6 +287,6 @@ Limitations
 >
 > This container differs by:
 > 1. `set()` accepts only objects or class-strings (no primitives)
-> 3. `make()` — always creates a new instance, supports runtime parameters
-> 4. Factory in `make()` — closure parameters are autowired (not just `$container`)
-> 5. Factory in `get()` — closure receives `$this` (the container)
+> 2. `make()` — does not cache results. Supports runtime parameters
+> 3. Factory in `make()` — closure parameters are autowired (not just `$container`)
+> 4. Factory in `get()` — closure receives `$this` (the container)

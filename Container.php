@@ -138,9 +138,10 @@ class Container {
 			throw new RuntimeException( "Factory for service `$id` must return an object." );
 		}
 
-		// IMP: after Closure (because Closure is object)
 		if( is_object( $definition ) ){
-			return $definition;
+			throw new RuntimeException(
+				"Service `$id` is registered as an instance and cannot be created with make()."
+			);
 		}
 
 		if( is_string( $definition ) && class_exists( $definition ) ){

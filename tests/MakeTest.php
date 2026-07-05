@@ -24,16 +24,20 @@ final class MakeTest extends TestCase {
 		$this->container = new Container();
 	}
 
-	// ────────────────────────────────────────────────────────────────────
-	// Basic: new instance each time, not cached, autowiring, deep chain
-	// ────────────────────────────────────────────────────────────────────
-
 	public function test__creates_new_instance_each_time(): void {
 		$first = $this->container->make( SimpleClass::class );
 		$second = $this->container->make( SimpleClass::class );
 
 		self::assertNotSame( $first, $second );
 		self::assertEquals( $first, $second );
+	}
+
+	public function test__uses_registered_definition(): void {
+		$this->container->set( SomeInterface::class, InterfaceImpl::class );
+
+		$result = $this->container->make( SomeInterface::class );
+
+		self::assertInstanceOf( InterfaceImpl::class, $result );
 	}
 
 	public function test__does_not_cache_result(): void {
@@ -60,7 +64,7 @@ final class MakeTest extends TestCase {
 	}
 
 	// ────────────────────────────────────────────────────────────────────
-	// Runtime params: override defaults, resolve scalars, override object deps
+	// Runtime parameters
 	// ────────────────────────────────────────────────────────────────────
 
 	public function test__runtime_params_override_defaults(): void {
@@ -95,7 +99,7 @@ final class MakeTest extends TestCase {
 	}
 
 	// ────────────────────────────────────────────────────────────────────
-	// Factory: closure creates new each time, autowired params, runtime params, mixed params
+	// Factory
 	// ────────────────────────────────────────────────────────────────────
 
 	public function test__factory_closure(): void {
@@ -154,34 +158,12 @@ final class MakeTest extends TestCase {
 	}
 
 	// ────────────────────────────────────────────────────────────────────
-	// Registered definitions: class-string binding, object returned as-is
-	// ────────────────────────────────────────────────────────────────────
-
-	public function test__uses_registered_definition(): void {
-		$this->container->set( SomeInterface::class, InterfaceImpl::class );
-
-		$result = $this->container->make( SomeInterface::class );
-
-		self::assertInstanceOf( InterfaceImpl::class, $result );
-	}
-
-	public function test__registered_object_returns_same_object(): void {
-		$obj = new SimpleClass();
-		$this->container->set( 'service', $obj );
-
-		$result = $this->container->make( 'service' );
-
-		// set() с объектом (не closure) — make() возвращает его как есть
-		self::assertSame( $obj, $result );
-	}
-
-	// ────────────────────────────────────────────────────────────────────
-	// Exceptions: non-existent class, factory returns non-object, unresolvable scalar
+	// Exceptions
 	// ────────────────────────────────────────────────────────────────────
 
 	public function test__exception__non_existent_class(): void {
 		$this->expectException( RuntimeException::class );
-		$this->expectExceptionMessage( 'class not exist' );
+		$this->expectExceptionMessageIsOrContains( 'class not exist' );
 
 		$this->container->make( 'this-is-not-a-class' );
 	}
@@ -192,15 +174,26 @@ final class MakeTest extends TestCase {
 		} );
 
 		$this->expectException( RuntimeException::class );
-		$this->expectExceptionMessage( 'must return an object' );
+		$this->expectExceptionMessageIsOrContains( 'must return an object' );
 
 		$this->container->make( 'service' );
 	}
 
 	public function test__exception__unresolvable_scalar_without_runtime_param(): void {
 		$this->expectException( RuntimeException::class );
-		$this->expectExceptionMessage( 'not resolved' );
+		$this->expectExceptionMessageIsOrContains( 'not resolved' );
 
 		$this->container->make( ClassWithScalarRequired::class );
 	}
+
+	public function test__exception__registered_object_cannot_be_made(): void {
+		$obj = new SimpleClass();
+		$this->container->set( 'service', $obj );
+
+		$this->expectException( RuntimeException::class );
+		$this->expectExceptionMessageIsOrContains( 'registered as an instance' );
+
+		$this->container->make( 'service' );
+	}
+
 }

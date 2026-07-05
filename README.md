@@ -162,6 +162,9 @@ Accepted values:
 * existing class name - `MyClass::class`
 * closure factory - `static fn () => new MyClass()`
 
+> [!IMPORTANT]
+> Configure the container before the first call to `get()`. Replacing a definition with `set()` removes the stored instance for that ID, but does not rebuild other shared services that were already created with the previous instance as a dependency.
+
 
 ### set() – Register an existing object
 
@@ -220,12 +223,14 @@ Creates a fresh object from a registered definition or class name.
 Unlike `get()`, it does not store the created object in the container.
 
 > [!NOTE]
-> Definitions registered as existing object instances cannot be used with `make()`;
-use `get()` to retrieve those instances.
+> Definitions registered as existing object instances cannot be used with `make()` - use `get()` to retrieve those instances.
+>
+> Only the requested root object is created anew. Missing class dependencies are resolved through `get()`, so those dependencies are shared and reused by subsequent calls.
 > 
-> Class-string definitions are instantiated again and closure factories are invoked on every call.
+> Class-string definitions are instantiated again, and closure factories are invoked on every call.
 > 
-> Factories must return an object, but are responsible for whether that object is a new instance.
+> Factories must return an object but are responsible for whether that object is a new instance.
+
 
 ### make() - New instances
 `make()` creates a new object and does not save it in the container.

@@ -25,6 +25,7 @@ use Closure;
 
 use function array_key_exists;
 use function class_exists;
+use function interface_exists;
 use function is_string;
 
 class ContainerException extends RuntimeException {}
@@ -84,6 +85,10 @@ class Container {
 	 * @throws InvalidArgumentException
 	 */
 	public function set( string $id, $service ): void {
+		if ( ! $this->is_valid_id( $id ) ) {
+			throw new InvalidArgumentException( "Service ID `$id` must be an existing class or interface." );
+		}
+
 		if ( ! is_object( $service ) && ! is_string( $service ) ) {
 			throw new InvalidArgumentException( "Service definition `$id` must be an object or class name." );
 		}
@@ -110,6 +115,10 @@ class Container {
 	 * @throws ContainerException Error while retrieving the entry.
 	 */
 	public function get( string $id ) {
+		if ( ! $this->is_valid_id( $id ) ) {
+			throw new NotFoundException( "Service ID `$id` must be an existing class or interface." );
+		}
+
 		if ( array_key_exists( $id, $this->instances ) ) {
 			return $this->instances[ $id ];
 		}
@@ -140,6 +149,10 @@ class Container {
 	 * @throws ContainerException
 	 */
 	public function make( string $id, array $parameters = [] ) {
+		if ( ! $this->is_valid_id( $id ) ) {
+			throw new NotFoundException( "Service ID `$id` must be an existing class or interface." );
+		}
+
 		$this->start_resolution( $id );
 
 		try {
@@ -346,6 +359,13 @@ class Container {
 	 */
 	protected function finish_resolution( string $id ): void {
 		unset( $this->resolving[ $id ] );
+	}
+
+	/**
+	 * Checks whether an ID is an existing class or interface name.
+	 */
+	protected function is_valid_id( string $id ): bool {
+		return class_exists( $id ) || interface_exists( $id );
 	}
 
 	/**

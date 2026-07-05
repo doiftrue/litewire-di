@@ -23,10 +23,10 @@ The container does not implement `Psr\Container\ContainerInterface` and does not
 
 ### Container API
 ```php
-$container->set( string $id, object|Closure|string $service ): void;
-$container->has( string $id ): bool;
-$container->get( string $id );
-$container->make( string $id, array $parameters = [] );
+$container->set( class-string $id, object|Closure|class-string $service ): void;
+$container->has( class-string $id ): bool;
+$container->get( class-string $id );
+$container->make( class-string $id, array $parameters = [] );
 ```
 
 
@@ -157,6 +157,13 @@ $container->has( 'Unknown' );      // false
 set()
 -----
 Registers a service definition.
+
+Service IDs must be existing class or interface names. Arbitrary string IDs are not supported:
+
+```php
+$container->set( Logger_Interface::class, File_Logger::class ); // valid
+$container->set( 'logger', File_Logger::class );                // InvalidArgumentException
+```
 
 Accepted values:
 

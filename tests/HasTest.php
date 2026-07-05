@@ -26,9 +26,9 @@ final class HasTest extends TestCase {
 	}
 
 	public function test__registered_service(): void {
-		$this->container->set( 'service', new SimpleClass() );
+		$this->container->set( SimpleClass::class, new SimpleClass() );
 
-		self::assertTrue( $this->container->has( 'service' ) );
+		self::assertTrue( $this->container->has( SimpleClass::class ) );
 	}
 
 	public function test__unregistered_service(): void {

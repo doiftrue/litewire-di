@@ -7,6 +7,7 @@ namespace Kama\MiniContainer\Tests;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
 use Kama\MiniContainer\Container;
+use Kama\MiniContainer\NotFoundException;
 use Kama\MiniContainer\Tests\Fixtures\SimpleClass;
 use Kama\MiniContainer\Tests\Fixtures\ClassWithDeps;
 use Kama\MiniContainer\Tests\Fixtures\ClassWithDefaults;
@@ -105,38 +106,38 @@ final class MakeTest extends TestCase {
 	// ────────────────────────────────────────────────────────────────────
 
 	public function test__factory_closure(): void {
-		$this->container->set( 'service', function () {
+		$this->container->set( stdClass::class, function () {
 			return new stdClass();
 		} );
 
-		$first = $this->container->make( 'service' );
-		$second = $this->container->make( 'service' );
+		$first = $this->container->make( stdClass::class );
+		$second = $this->container->make( stdClass::class );
 
 		self::assertInstanceOf( stdClass::class, $first );
 		self::assertNotSame( $first, $second );
 	}
 
 	public function test__factory_with_autowired_params(): void {
-		$this->container->set( 'service', function ( SimpleClass $simple ) {
+		$this->container->set( stdClass::class, function ( SimpleClass $simple ) {
 			$obj = new stdClass();
 			$obj->simple = $simple;
 			return $obj;
 		} );
 
-		$result = $this->container->make( 'service' );
+		$result = $this->container->make( stdClass::class );
 
 		self::assertInstanceOf( SimpleClass::class, $result->simple );
 	}
 
 	public function test__factory_with_runtime_params(): void {
-		$this->container->set( 'service', function ( string $name, int $count = 5 ) {
+		$this->container->set( stdClass::class, function ( string $name, int $count = 5 ) {
 			$obj = new stdClass();
 			$obj->name = $name;
 			$obj->count = $count;
 			return $obj;
 		} );
 
-		$result = $this->container->make( 'service', [
+		$result = $this->container->make( stdClass::class, [
 			'name'  => 'hello',
 			'count' => 42,
 		] );
@@ -146,14 +147,14 @@ final class MakeTest extends TestCase {
 	}
 
 	public function test__factory_mixed_autowired_and_runtime_params(): void {
-		$this->container->set( 'service', function ( SimpleClass $simple, string $label ) {
+		$this->container->set( stdClass::class, function ( SimpleClass $simple, string $label ) {
 			$obj = new stdClass();
 			$obj->simple = $simple;
 			$obj->label = $label;
 			return $obj;
 		} );
 
-		$result = $this->container->make( 'service', [ 'label' => 'test' ] );
+		$result = $this->container->make( stdClass::class, [ 'label' => 'test' ] );
 
 		self::assertInstanceOf( SimpleClass::class, $result->simple );
 		self::assertSame( 'test', $result->label );
@@ -164,21 +165,21 @@ final class MakeTest extends TestCase {
 	// ────────────────────────────────────────────────────────────────────
 
 	public function test__exception__non_existent_class(): void {
-		$this->expectException( RuntimeException::class );
-		$this->expectExceptionMessageIsOrContains( 'class not exist' );
+		$this->expectException( NotFoundException::class );
+		$this->expectExceptionMessageIsOrContains( 'Service ID `this-is-not-a-class`' );
 
 		$this->container->make( 'this-is-not-a-class' );
 	}
 
 	public function test__exception__factory_returns_non_object(): void {
-		$this->container->set( 'service', function () {
+		$this->container->set( stdClass::class, function () {
 			return 'string value';
 		} );
 
 		$this->expectException( RuntimeException::class );
 		$this->expectExceptionMessageIsOrContains( 'must return an object' );
 
-		$this->container->make( 'service' );
+		$this->container->make( stdClass::class );
 	}
 
 	public function test__exception__unresolvable_scalar_without_runtime_param(): void {
@@ -190,12 +191,12 @@ final class MakeTest extends TestCase {
 
 	public function test__exception__registered_object_cannot_be_made(): void {
 		$obj = new SimpleClass();
-		$this->container->set( 'service', $obj );
+		$this->container->set( SimpleClass::class, $obj );
 
 		$this->expectException( RuntimeException::class );
 		$this->expectExceptionMessageIsOrContains( 'registered as an instance' );
 
-		$this->container->make( 'service' );
+		$this->container->make( SimpleClass::class );
 	}
 
 	public function test__exception__cyclic_dependency(): void {

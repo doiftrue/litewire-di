@@ -7,6 +7,7 @@ namespace Kama\MiniContainer\Tests;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
 use Kama\MiniContainer\Container;
+use Kama\MiniContainer\NotFoundException;
 use Kama\MiniContainer\Tests\Fixtures\SimpleClass;
 use Kama\MiniContainer\Tests\Fixtures\ClassNoConstructor;
 use Kama\MiniContainer\Tests\Fixtures\ClassEmptyConstructor;
@@ -23,6 +24,7 @@ use Kama\MiniContainer\Tests\Fixtures\ConcreteService;
 use Kama\MiniContainer\Tests\Fixtures\ClassNeedsInterface;
 use Kama\MiniContainer\Tests\Fixtures\ClassNeedsAbstract;
 use Kama\MiniContainer\Tests\Fixtures\ClassCyclicA;
+use Kama\MiniContainer\Tests\Fixtures\ClassCyclicB;
 use Kama\MiniContainer\Tests\Fixtures\ClassPrivateConstructor;
 use Kama\MiniContainer\Tests\Fixtures\ClassGetsItself;
 use stdClass;
@@ -36,7 +38,7 @@ final class GetTest extends TestCase {
 	}
 
 	// ────────────────────────────────────────────────────────────────────
-	// Basic: object, class-string, factory, container as dependency, auto-resolve
+	// Basic
 	// ────────────────────────────────────────────────────────────────────
 
 	public function test__registered_object(): void {
@@ -47,9 +49,9 @@ final class GetTest extends TestCase {
 	}
 
 	public function test__registered_class_string(): void {
-		$this->container->set( 'service', SimpleClass::class );
+		$this->container->set( SimpleClass::class, SimpleClass::class );
 
-		self::assertInstanceOf( SimpleClass::class, $this->container->get( 'service' ) );
+		self::assertInstanceOf( SimpleClass::class, $this->container->get( SimpleClass::class ) );
 	}
 
 	// ────────────────────────────────────────────────────────────────────
@@ -57,34 +59,34 @@ final class GetTest extends TestCase {
 	// ────────────────────────────────────────────────────────────────────
 
 	public function test__factory_closure(): void {
-		$this->container->set( 'service', function () {
+		$this->container->set( stdClass::class, function () {
 			return new stdClass();
 		} );
 
-		self::assertInstanceOf( stdClass::class, $this->container->get( 'service' ) );
+		self::assertInstanceOf( stdClass::class, $this->container->get( stdClass::class ) );
 	}
 
 	public function test__factory_receives_container(): void {
-		$this->container->set( 'dep', new SimpleClass() );
-		$this->container->set( 'service', function ( Container $c ) {
+		$this->container->set( SimpleClass::class, new SimpleClass() );
+		$this->container->set( stdClass::class, function ( Container $c ) {
 			$obj = new stdClass();
-			$obj->dep = $c->get( 'dep' );
+			$obj->dep = $c->get( SimpleClass::class );
 			return $obj;
 		} );
 
-		$result = $this->container->get( 'service' );
+		$result = $this->container->get( stdClass::class );
 
 		self::assertInstanceOf( SimpleClass::class, $result->dep );
 	}
 
 	public function test__factory_with_autowired_dependency(): void {
-		$this->container->set( 'service', function ( SimpleClass $simple ) {
+		$this->container->set( stdClass::class, function ( SimpleClass $simple ) {
 			$obj = new stdClass();
 			$obj->simple = $simple;
 			return $obj;
 		} );
 
-		$result = $this->container->get( 'service' );
+		$result = $this->container->get( stdClass::class );
 
 		self::assertSame( $this->container->get( SimpleClass::class ), $result->simple );
 	}
@@ -100,7 +102,7 @@ final class GetTest extends TestCase {
 	}
 
 	// ────────────────────────────────────────────────────────────────────
-	// Singleton: same instance, mutation visible, child deps shared
+	// Singleton
 	// ────────────────────────────────────────────────────────────────────
 
 	public function test__singleton_same_instance(): void {
@@ -111,16 +113,16 @@ final class GetTest extends TestCase {
 	}
 
 	public function test__singleton_property_mutation_visible(): void {
-		$this->container->set( 'service', function () {
+		$this->container->set( stdClass::class, function () {
 			$obj = new stdClass();
 			$obj->title = 'original';
 			return $obj;
 		} );
 
-		$service = $this->container->get( 'service' );
+		$service = $this->container->get( stdClass::class );
 		$service->title = 'changed';
 
-		self::assertSame( 'changed', $this->container->get( 'service' )->title );
+		self::assertSame( 'changed', $this->container->get( stdClass::class )->title );
 	}
 
 	public function test__singleton_child_dependencies_shared(): void {
@@ -131,8 +133,7 @@ final class GetTest extends TestCase {
 	}
 
 	// ────────────────────────────────────────────────────────────────────
-	// Autowiring: no constructor, empty constructor, class deps, default values,
-	//             deep chain (A→B→C), interface binding, abstract binding
+	// Autowiring
 	// ────────────────────────────────────────────────────────────────────
 
 	public function test__autowiring__no_constructor(): void {
@@ -191,33 +192,32 @@ final class GetTest extends TestCase {
 	}
 
 	// ────────────────────────────────────────────────────────────────────
-	// Exceptions: not found, unresolvable scalar, factory returns non-object,
-	//             unbound interface/abstract, cyclic dependency detected
+	// Exceptions
 	// ────────────────────────────────────────────────────────────────────
 
 	public function test__exception__service_not_found(): void {
-		$this->expectException( RuntimeException::class );
-		$this->expectExceptionMessage( 'not found' );
+		$this->expectException( NotFoundException::class );
+		$this->expectExceptionMessageIsOrContains( 'Service ID `non-existent-service`' );
 
 		$this->container->get( 'non-existent-service' );
 	}
 
 	public function test__exception__unresolvable_scalar(): void {
 		$this->expectException( RuntimeException::class );
-		$this->expectExceptionMessage( 'not resolved' );
+		$this->expectExceptionMessageIsOrContains( 'not resolved' );
 
 		$this->container->get( ClassWithScalarRequired::class );
 	}
 
 	public function test__exception__factory_returns_non_object(): void {
-		$this->container->set( 'service', function () {
+		$this->container->set( stdClass::class, function () {
 			return 'not an object';
 		} );
 
 		$this->expectException( RuntimeException::class );
-		$this->expectExceptionMessage( 'must return an object' );
+		$this->expectExceptionMessageIsOrContains( 'must return an object' );
 
-		$this->container->get( 'service' );
+		$this->container->get( stdClass::class );
 	}
 
 	public function test__exception__unbound_interface(): void {
@@ -228,14 +228,14 @@ final class GetTest extends TestCase {
 
 	public function test__exception__unbound_abstract(): void {
 		$this->expectException( RuntimeException::class );
-		$this->expectExceptionMessage( 'is not instantiable' );
+		$this->expectExceptionMessageIsOrContains( 'is not instantiable' );
 
 		$this->container->get( ClassNeedsAbstract::class );
 	}
 
 	public function test__exception__private_constructor(): void {
 		$this->expectException( RuntimeException::class );
-		$this->expectExceptionMessage( 'is not instantiable' );
+		$this->expectExceptionMessageIsOrContains( 'is not instantiable' );
 
 		$this->container->get( ClassPrivateConstructor::class );
 	}
@@ -245,39 +245,44 @@ final class GetTest extends TestCase {
 	 */
 	public function test__exception__cyclic_dependency(): void {
 		$this->expectException( RuntimeException::class );
-		$this->expectExceptionMessage( 'Circular dependency detected' );
+		$this->expectExceptionMessageIsOrContains( 'Circular dependency detected' );
 
 		$this->container->get( ClassCyclicA::class );
 	}
 
 	public function test__exception__self_referencing_factory(): void {
-		$this->container->set( 'service', function ( Container $container ) {
-			return $container->get( 'service' );
+		$service = ClassCyclicA::class;
+
+		$this->container->set( $service, function ( Container $container ) use ( $service ) {
+			return $container->get( $service );
 		} );
 
 		$this->expectException( RuntimeException::class );
-		$this->expectExceptionMessage( 'service → service' );
+		$this->expectExceptionMessageIsOrContains( "$service → $service" );
 
-		$this->container->get( 'service' );
+		$this->container->get( $service );
 	}
 
 	public function test__exception__cycle_between_factories(): void {
-		$this->container->set( 'service-a', function ( Container $container ) {
-			return $container->get( 'service-b' );
+		$service_a = ClassCyclicA::class;
+		$service_b = ClassCyclicB::class;
+
+		$this->container->set( $service_a, function ( Container $container ) use ( $service_b ) {
+			return $container->get( $service_b );
 		} );
-		$this->container->set( 'service-b', function ( Container $container ) {
-			return $container->get( 'service-a' );
+		$this->container->set( $service_b, function ( Container $container ) use ( $service_a ) {
+			return $container->get( $service_a );
 		} );
 
 		$this->expectException( RuntimeException::class );
-		$this->expectExceptionMessage( 'service-a → service-b → service-a' );
+		$this->expectExceptionMessageIsOrContains( "$service_a → $service_b → $service_a" );
 
-		$this->container->get( 'service-a' );
+		$this->container->get( $service_a );
 	}
 
 	public function test__exception__recursive_get_from_constructor(): void {
 		$this->expectException( RuntimeException::class );
-		$this->expectExceptionMessage( ClassGetsItself::class . ' → ' . ClassGetsItself::class );
+		$this->expectExceptionMessageIsOrContains( ClassGetsItself::class . ' → ' . ClassGetsItself::class );
 
 		$this->container->get( ClassGetsItself::class );
 	}

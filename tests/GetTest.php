@@ -23,6 +23,7 @@ use Kama\MiniContainer\Tests\Fixtures\ConcreteService;
 use Kama\MiniContainer\Tests\Fixtures\ClassNeedsInterface;
 use Kama\MiniContainer\Tests\Fixtures\ClassNeedsAbstract;
 use Kama\MiniContainer\Tests\Fixtures\ClassCyclicA;
+use Kama\MiniContainer\Tests\Fixtures\ClassPrivateConstructor;
 use stdClass;
 
 final class GetTest extends TestCase {
@@ -209,9 +210,17 @@ final class GetTest extends TestCase {
 	}
 
 	public function test__exception__unbound_abstract(): void {
-		$this->expectException( \Throwable::class );
+		$this->expectException( RuntimeException::class );
+		$this->expectExceptionMessage( 'is not instantiable' );
 
 		$this->container->get( ClassNeedsAbstract::class );
+	}
+
+	public function test__exception__private_constructor(): void {
+		$this->expectException( RuntimeException::class );
+		$this->expectExceptionMessage( 'is not instantiable' );
+
+		$this->container->get( ClassPrivateConstructor::class );
 	}
 
 	/**

@@ -204,6 +204,10 @@ class Container {
 		try {
 			$reflection = $this->reflection_cache[ $class ] ??= new ReflectionClass( $class );
 
+			if ( ! $reflection->isInstantiable() ) {
+				throw new RuntimeException( "Class `$class` is not instantiable." );
+			}
+
 			$constructor = $reflection->getConstructor();
 			if ( ! $constructor ) {
 				return new $class();

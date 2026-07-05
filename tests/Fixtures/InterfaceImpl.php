@@ -1,6 +1,6 @@
 <?php
 
-namespace Kama\MiniContainer\Tests\Fixtures;
+namespace Kama\LiteWireDI\Tests\Fixtures;
 
 class InterfaceImpl implements SomeInterface {
 	public function doSomething(): string {

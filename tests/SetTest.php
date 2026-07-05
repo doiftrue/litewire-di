@@ -2,12 +2,12 @@
 
 declare( strict_types=1 );
 
-namespace Kama\MiniContainer\Tests;
+namespace Kama\LiteWireDI\Tests;
 
 use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
-use Kama\MiniContainer\Container;
-use Kama\MiniContainer\Tests\Fixtures\SimpleClass;
+use Kama\LiteWireDI\Container;
+use Kama\LiteWireDI\Tests\Fixtures\SimpleClass;
 use stdClass;
 
 final class SetTest extends TestCase {

@@ -1,6 +1,6 @@
 <?php
 
-namespace Kama\MiniContainer\Tests\Fixtures;
+namespace Kama\LiteWireDI\Tests\Fixtures;
 
 class SimpleClass {
 	public string $name = 'simple';

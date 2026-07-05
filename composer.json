@@ -1,5 +1,5 @@
 {
-    "name": "doiftrue/mini-autowire-container",
+    "name": "doiftrue/litewire-di",
     "description": "A tiny single-file PSR-11-style autowire DI container for PHP, with no dependencies.",
     "type": "library",
     "license": "MIT",
@@ -21,12 +21,12 @@
     },
     "autoload": {
         "psr-4": {
-            "Kama\\MiniContainer\\": ""
+            "Kama\\LiteWireDI\\": ""
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "Kama\\MiniContainer\\Tests\\": "tests/"
+            "Kama\\LiteWireDI\\Tests\\": "tests/"
         }
     }
 }

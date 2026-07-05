@@ -12,7 +12,7 @@
  * Version: 1.1.0
  */
 
-namespace Kama\MiniContainer;
+namespace Kama\LiteWireDI;
 
 use ReflectionClass;
 use ReflectionFunction;

@@ -1,8 +1,8 @@
 <?php
 
-namespace Kama\MiniContainer\Tests\Fixtures;
+namespace Kama\LiteWireDI\Tests\Fixtures;
 
-use Kama\MiniContainer\Container;
+use Kama\LiteWireDI\Container;
 
 class ClassGetsItself {
 	public function __construct( Container $container ) {

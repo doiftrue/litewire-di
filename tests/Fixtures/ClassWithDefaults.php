@@ -1,6 +1,6 @@
 <?php
 
-namespace Kama\MiniContainer\Tests\Fixtures;
+namespace Kama\LiteWireDI\Tests\Fixtures;
 
 class ClassWithDefaults {
 	public SimpleClass $simple;

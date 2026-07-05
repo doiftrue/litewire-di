@@ -2,31 +2,31 @@
 
 declare( strict_types=1 );
 
-namespace Kama\MiniContainer\Tests;
+namespace Kama\LiteWireDI\Tests;
 
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
-use Kama\MiniContainer\Container;
-use Kama\MiniContainer\NotFoundException;
-use Kama\MiniContainer\Tests\Fixtures\SimpleClass;
-use Kama\MiniContainer\Tests\Fixtures\ClassNoConstructor;
-use Kama\MiniContainer\Tests\Fixtures\ClassEmptyConstructor;
-use Kama\MiniContainer\Tests\Fixtures\ClassWithDeps;
-use Kama\MiniContainer\Tests\Fixtures\ClassWithDefaults;
-use Kama\MiniContainer\Tests\Fixtures\ClassWithScalarRequired;
-use Kama\MiniContainer\Tests\Fixtures\ClassDeepA;
-use Kama\MiniContainer\Tests\Fixtures\ClassDeepB;
-use Kama\MiniContainer\Tests\Fixtures\ClassDeepC;
-use Kama\MiniContainer\Tests\Fixtures\SomeInterface;
-use Kama\MiniContainer\Tests\Fixtures\InterfaceImpl;
-use Kama\MiniContainer\Tests\Fixtures\AbstractService;
-use Kama\MiniContainer\Tests\Fixtures\ConcreteService;
-use Kama\MiniContainer\Tests\Fixtures\ClassNeedsInterface;
-use Kama\MiniContainer\Tests\Fixtures\ClassNeedsAbstract;
-use Kama\MiniContainer\Tests\Fixtures\ClassCyclicA;
-use Kama\MiniContainer\Tests\Fixtures\ClassCyclicB;
-use Kama\MiniContainer\Tests\Fixtures\ClassPrivateConstructor;
-use Kama\MiniContainer\Tests\Fixtures\ClassGetsItself;
+use Kama\LiteWireDI\Container;
+use Kama\LiteWireDI\NotFoundException;
+use Kama\LiteWireDI\Tests\Fixtures\SimpleClass;
+use Kama\LiteWireDI\Tests\Fixtures\ClassNoConstructor;
+use Kama\LiteWireDI\Tests\Fixtures\ClassEmptyConstructor;
+use Kama\LiteWireDI\Tests\Fixtures\ClassWithDeps;
+use Kama\LiteWireDI\Tests\Fixtures\ClassWithDefaults;
+use Kama\LiteWireDI\Tests\Fixtures\ClassWithScalarRequired;
+use Kama\LiteWireDI\Tests\Fixtures\ClassDeepA;
+use Kama\LiteWireDI\Tests\Fixtures\ClassDeepB;
+use Kama\LiteWireDI\Tests\Fixtures\ClassDeepC;
+use Kama\LiteWireDI\Tests\Fixtures\SomeInterface;
+use Kama\LiteWireDI\Tests\Fixtures\InterfaceImpl;
+use Kama\LiteWireDI\Tests\Fixtures\AbstractService;
+use Kama\LiteWireDI\Tests\Fixtures\ConcreteService;
+use Kama\LiteWireDI\Tests\Fixtures\ClassNeedsInterface;
+use Kama\LiteWireDI\Tests\Fixtures\ClassNeedsAbstract;
+use Kama\LiteWireDI\Tests\Fixtures\ClassCyclicA;
+use Kama\LiteWireDI\Tests\Fixtures\ClassCyclicB;
+use Kama\LiteWireDI\Tests\Fixtures\ClassPrivateConstructor;
+use Kama\LiteWireDI\Tests\Fixtures\ClassGetsItself;
 use stdClass;
 
 final class GetTest extends TestCase {

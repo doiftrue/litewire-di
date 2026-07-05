@@ -1,4 +1,5 @@
-# Mini Autowire Container
+LiteWire DI Container
+=====================
 
 A tiny single-file autowire DI container for PHP and WordPress applications.
 
@@ -280,7 +281,7 @@ Comparison with other containers
 
 | Container              | Deps |     PSR-11 | Autowiring |           Shared services |   New instance method | Scalars | Config |
 |------------------------|-----:|-----------:|-----------:|--------------------------:|----------------------:|--------:|-------:|
-| Mini Container         |   no |      style |        yes |                   `get()` |              `make()` | runtime |     no |
+| LiteWire DI            |   no |      style |        yes |                   `get()` |              `make()` | runtime |     no |
 | PHP-DI                 |  yes |        yes |        yes |                   `get()` |              `make()` |     yes |    yes |
 | Symfony DI             |  yes |        yes |        yes |                   `get()` |    factories/services |     yes |    yes |
 | Laravel Container      |  yes | partly/yes |        yes | `singleton(), instance()` |              `make()` |     yes |    yes |
@@ -292,8 +293,7 @@ Comparison with other containers
 
 Best for:
 
-* `Mini Container` – simple PHP apps, WP plugins
-* `SimpleDic` – simple PHP apps, WP plugins
+* `LiteWire DI` – simple PHP apps, WP plugins
 * `PHP-DI` – medium and large apps
 * `Symfony DI` – Symfony apps, compiled container
 * `Laravel Container` – Laravel apps

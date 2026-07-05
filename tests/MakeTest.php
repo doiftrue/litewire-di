@@ -2,21 +2,21 @@
 
 declare( strict_types=1 );
 
-namespace Kama\MiniContainer\Tests;
+namespace Kama\LiteWireDI\Tests;
 
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
-use Kama\MiniContainer\Container;
-use Kama\MiniContainer\NotFoundException;
-use Kama\MiniContainer\Tests\Fixtures\SimpleClass;
-use Kama\MiniContainer\Tests\Fixtures\ClassWithDeps;
-use Kama\MiniContainer\Tests\Fixtures\ClassWithDefaults;
-use Kama\MiniContainer\Tests\Fixtures\ClassWithScalarRequired;
-use Kama\MiniContainer\Tests\Fixtures\ClassDeepA;
-use Kama\MiniContainer\Tests\Fixtures\SomeInterface;
-use Kama\MiniContainer\Tests\Fixtures\InterfaceImpl;
-use Kama\MiniContainer\Tests\Fixtures\ClassCyclicA;
-use Kama\MiniContainer\Tests\Fixtures\ClassWithVariadic;
+use Kama\LiteWireDI\Container;
+use Kama\LiteWireDI\NotFoundException;
+use Kama\LiteWireDI\Tests\Fixtures\SimpleClass;
+use Kama\LiteWireDI\Tests\Fixtures\ClassWithDeps;
+use Kama\LiteWireDI\Tests\Fixtures\ClassWithDefaults;
+use Kama\LiteWireDI\Tests\Fixtures\ClassWithScalarRequired;
+use Kama\LiteWireDI\Tests\Fixtures\ClassDeepA;
+use Kama\LiteWireDI\Tests\Fixtures\SomeInterface;
+use Kama\LiteWireDI\Tests\Fixtures\InterfaceImpl;
+use Kama\LiteWireDI\Tests\Fixtures\ClassCyclicA;
+use Kama\LiteWireDI\Tests\Fixtures\ClassWithVariadic;
 use stdClass;
 
 final class MakeTest extends TestCase {

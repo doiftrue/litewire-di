@@ -159,8 +159,8 @@ Registers a service definition.
 Accepted values:
 
 * existing object - `new MyClass()`
-* class name - `MyClass::class`
-* closure factory - `static function () { return new MyClass(); }`
+* existing class name - `MyClass::class`
+* closure factory - `static fn () => new MyClass()`
 
 
 ### set() – Register an existing object

@@ -85,6 +85,10 @@ class Container {
 			throw new InvalidArgumentException( "Service definition `$id` must be an object or class name." );
 		}
 
+		if ( is_string( $service ) && ! class_exists( $service ) ) {
+			throw new InvalidArgumentException( "Class `$service` configured for service `$id` does not exist." );
+		}
+
 		$this->definitions[ $id ] = $service;
 		unset(
 			$this->instances[ $id ],

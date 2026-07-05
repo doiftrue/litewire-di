@@ -87,4 +87,11 @@ final class SetTest extends TestCase {
 		$this->container->set( 'service', true );
 	}
 
+	public function test__exception_on_unknown_class_string(): void {
+		$this->expectException( InvalidArgumentException::class );
+		$this->expectExceptionMessage( 'does not exist' );
+
+		$this->container->set( 'service', 'UnknownClass' );
+	}
+
 }

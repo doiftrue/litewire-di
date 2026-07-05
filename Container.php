@@ -225,14 +225,14 @@ class Container {
 
 			$constructor = $reflection->getConstructor();
 			if ( ! $constructor ) {
+				if ( $runtime_params ) {
+					throw new RuntimeException( "Class `$class` has no constructor and does not accept runtime parameters." );
+				}
+
 				return new $class();
 			}
 
 			$params = $constructor->getParameters();
-			if ( ! $params ) {
-				return new $class();
-			}
-
 			$resolved_params = $this->resolve_parameters( $params, $runtime_params );
 		}
 		catch ( ReflectionException $e ) {
@@ -255,6 +255,8 @@ class Container {
 	 * @throws ReflectionException
 	 */
 	protected function resolve_parameters( array $params, array $runtime_params = [] ): array {
+		$this->validate_runtime_parameters( $params, $runtime_params );
+
 		$resolved = [];
 		foreach ( $params as $param ) {
 			$name = $param->getName();
@@ -264,6 +266,27 @@ class Container {
 		}
 
 		return $resolved;
+	}
+
+	/**
+	 * Rejects runtime parameters that are not declared by a constructor or factory.
+	 *
+	 * @param ReflectionParameter[] $params
+	 * @param array<string, mixed>  $runtime_params  Runtime parameters by name.
+	 *
+	 * @throws RuntimeException
+	 */
+	protected function validate_runtime_parameters( array $params, array $runtime_params ): void {
+		$known_params = [];
+		foreach ( $params as $param ) {
+			$known_params[ $param->getName() ] = true;
+		}
+
+		$unknown_params = array_diff_key( $runtime_params, $known_params );
+		if ( $unknown_params ) {
+			$names = implode( '`, `', array_keys( $unknown_params ) );
+			throw new RuntimeException( "Unknown runtime parameter(s): `$names`." );
+		}
 	}
 
 	/**

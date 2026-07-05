@@ -204,4 +204,18 @@ final class MakeTest extends TestCase {
 		$this->container->make( ClassCyclicA::class );
 	}
 
+	public function test__exception__unknown_runtime_parameter(): void {
+		$this->expectException( RuntimeException::class );
+		$this->expectExceptionMessageIsOrContains( 'Unknown runtime parameter(s): `unknown`' );
+
+		$this->container->make( ClassWithDefaults::class, [ 'unknown' => 'value' ] );
+	}
+
+	public function test__exception__runtime_parameter_for_class_without_constructor(): void {
+		$this->expectException( RuntimeException::class );
+		$this->expectExceptionMessageIsOrContains( 'has no constructor and does not accept runtime parameters' );
+
+		$this->container->make( SimpleClass::class, [ 'unknown' => 'value' ] );
+	}
+
 }

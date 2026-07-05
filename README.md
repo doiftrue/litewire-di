@@ -248,6 +248,7 @@ This is useful for stateful objects, DTOs, handlers, commands, forms, and other 
 Named runtime parameters can be passed to `make()`.
 
 Class dependencies are still autowired automatically. Scalar values must be passed manually or have default values.
+Unknown parameter names throw a `RuntimeException` instead of being ignored.
 
 Such a call may also be treated as a factory that can be mocked in tests.
 

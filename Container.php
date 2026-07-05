@@ -255,7 +255,7 @@ class Container {
 	 * @throws ReflectionException
 	 */
 	protected function resolve_parameters( array $params, array $runtime_params = [] ): array {
-		$this->validate_runtime_parameters( $params, $runtime_params );
+		$this->validate_parameters( $params, $runtime_params );
 
 		$resolved = [];
 		foreach ( $params as $param ) {
@@ -269,16 +269,22 @@ class Container {
 	}
 
 	/**
-	 * Rejects runtime parameters that are not declared by a constructor or factory.
+	 * Validates a constructor or factory signature and its runtime parameters.
 	 *
 	 * @param ReflectionParameter[] $params
 	 * @param array<string, mixed>  $runtime_params  Runtime parameters by name.
 	 *
 	 * @throws RuntimeException
 	 */
-	protected function validate_runtime_parameters( array $params, array $runtime_params ): void {
+	protected function validate_parameters( array $params, array $runtime_params ): void {
 		$known_params = [];
 		foreach ( $params as $param ) {
+			if ( $param->isVariadic() ) {
+				throw new RuntimeException(
+					"Variadic parameter `{$param->getName()}` of `{$this->get_declared_in( $param )}` is not supported."
+				);
+			}
+
 			$known_params[ $param->getName() ] = true;
 		}
 
@@ -311,11 +317,7 @@ class Container {
 			return $param->getDefaultValue();
 		}
 
-		$declared_in = $param->getDeclaringClass()
-			? $param->getDeclaringClass()->getName()
-			: $param->getDeclaringFunction()->getName();
-
-		$message = "Parameter `{$param->getName()}` of `$declared_in` not resolved.";
+		$message = "Parameter `{$param->getName()}` of `{$this->get_declared_in( $param )}` not resolved.";
 		throw new RuntimeException( $message );
 	}
 
@@ -338,6 +340,15 @@ class Container {
 	 */
 	protected function finish_resolution( string $id ): void {
 		unset( $this->resolving[ $id ] );
+	}
+
+	/**
+	 * Returns the class or function name that declares a parameter.
+	 */
+	protected function get_declared_in( ReflectionParameter $param ): string {
+		return $param->getDeclaringClass()
+			? $param->getDeclaringClass()->getName()
+			: $param->getDeclaringFunction()->getName();
 	}
 
 }

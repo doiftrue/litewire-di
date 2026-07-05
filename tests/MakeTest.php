@@ -15,6 +15,7 @@ use Kama\MiniContainer\Tests\Fixtures\ClassDeepA;
 use Kama\MiniContainer\Tests\Fixtures\SomeInterface;
 use Kama\MiniContainer\Tests\Fixtures\InterfaceImpl;
 use Kama\MiniContainer\Tests\Fixtures\ClassCyclicA;
+use Kama\MiniContainer\Tests\Fixtures\ClassWithVariadic;
 use stdClass;
 
 final class MakeTest extends TestCase {
@@ -216,6 +217,13 @@ final class MakeTest extends TestCase {
 		$this->expectExceptionMessageIsOrContains( 'has no constructor and does not accept runtime parameters' );
 
 		$this->container->make( SimpleClass::class, [ 'unknown' => 'value' ] );
+	}
+
+	public function test__exception__variadic_parameter(): void {
+		$this->expectException( RuntimeException::class );
+		$this->expectExceptionMessageIsOrContains( 'Variadic parameter `names`' );
+
+		$this->container->make( ClassWithVariadic::class );
 	}
 
 }

@@ -305,6 +305,7 @@ Limitations
 * No tags
 * No scalar parameter storage
 * No union/intersection type resolving
+* No variadic parameter resolving
 * Required scalar constructor parameters must be provided manually
 
 

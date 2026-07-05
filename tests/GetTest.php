@@ -24,6 +24,7 @@ use Kama\MiniContainer\Tests\Fixtures\ClassNeedsInterface;
 use Kama\MiniContainer\Tests\Fixtures\ClassNeedsAbstract;
 use Kama\MiniContainer\Tests\Fixtures\ClassCyclicA;
 use Kama\MiniContainer\Tests\Fixtures\ClassPrivateConstructor;
+use Kama\MiniContainer\Tests\Fixtures\ClassGetsItself;
 use stdClass;
 
 final class GetTest extends TestCase {
@@ -248,4 +249,37 @@ final class GetTest extends TestCase {
 
 		$this->container->get( ClassCyclicA::class );
 	}
+
+	public function test__exception__self_referencing_factory(): void {
+		$this->container->set( 'service', function ( Container $container ) {
+			return $container->get( 'service' );
+		} );
+
+		$this->expectException( RuntimeException::class );
+		$this->expectExceptionMessage( 'service → service' );
+
+		$this->container->get( 'service' );
+	}
+
+	public function test__exception__cycle_between_factories(): void {
+		$this->container->set( 'service-a', function ( Container $container ) {
+			return $container->get( 'service-b' );
+		} );
+		$this->container->set( 'service-b', function ( Container $container ) {
+			return $container->get( 'service-a' );
+		} );
+
+		$this->expectException( RuntimeException::class );
+		$this->expectExceptionMessage( 'service-a → service-b → service-a' );
+
+		$this->container->get( 'service-a' );
+	}
+
+	public function test__exception__recursive_get_from_constructor(): void {
+		$this->expectException( RuntimeException::class );
+		$this->expectExceptionMessage( ClassGetsItself::class . ' → ' . ClassGetsItself::class );
+
+		$this->container->get( ClassGetsItself::class );
+	}
+
 }

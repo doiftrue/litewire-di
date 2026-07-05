@@ -45,7 +45,7 @@ class Container {
 	protected array $reflection_cache = [];
 
 	/**
-	 * Classes currently being resolved (cycle detection).
+	 * Entry IDs currently being resolved (cycle detection).
 	 */
 	protected array $resolving = [];
 
@@ -113,7 +113,14 @@ class Container {
 			return $this->instances[ $id ];
 		}
 
-		return $this->instances[ $id ] = $this->resolve( $id );
+		$this->start_resolution( $id );
+
+		try {
+			return $this->instances[ $id ] = $this->resolve( $id );
+		}
+		finally {
+			$this->finish_resolution( $id );
+		}
 	}
 
 	/**
@@ -132,23 +139,30 @@ class Container {
 	 * @throws RuntimeException
 	 */
 	public function make( string $id, array $parameters = [] ) {
-		$definition = $this->definitions[ $id ] ?? $id;
+		$this->start_resolution( $id );
 
-		if( $definition instanceof Closure ){
-			return $this->invoke_factory( $id, $definition, $parameters );
+		try {
+			$definition = $this->definitions[ $id ] ?? $id;
+
+			if( $definition instanceof Closure ){
+				return $this->invoke_factory( $id, $definition, $parameters );
+			}
+
+			if( is_object( $definition ) ){
+				throw new RuntimeException(
+					"Service `$id` is registered as an instance and cannot be created with make()."
+				);
+			}
+
+			if( is_string( $definition ) && class_exists( $definition ) ){
+				return $this->resolve_class( $definition, $parameters );
+			}
+
+			throw new RuntimeException( "Definition `$id` could not be resolved because class not exist." );
 		}
-
-		if( is_object( $definition ) ){
-			throw new RuntimeException(
-				"Service `$id` is registered as an instance and cannot be created with make()."
-			);
+		finally {
+			$this->finish_resolution( $id );
 		}
-
-		if( is_string( $definition ) && class_exists( $definition ) ){
-			return $this->resolve_class( $definition, $parameters );
-		}
-
-		throw new RuntimeException( "Definition `$id` could not be resolved because class not exist." );
 	}
 
 	/**
@@ -205,13 +219,6 @@ class Container {
 	 * @throws RuntimeException
 	 */
 	protected function resolve_class( string $class, array $runtime_params = [] ): object {
-		if ( isset( $this->resolving[ $class ] ) ) {
-			$chain = implode( ' → ', array_keys( $this->resolving ) ) . " → $class";
-			throw new RuntimeException( "Circular dependency detected: $chain" );
-		}
-
-		$this->resolving[ $class ] = true;
-
 		try {
 			$reflection = $this->reflection_cache[ $class ] ??= new ReflectionClass( $class );
 
@@ -235,9 +242,6 @@ class Container {
 			throw new RuntimeException(
 				"Service `$class` could not be resolved due the reflection issue: `{$e->getMessage()}`"
 			);
-		}
-		finally {
-			unset( $this->resolving[ $class ] );
 		}
 
 		return new $class( ...$resolved_params );
@@ -293,6 +297,27 @@ class Container {
 
 		$message = "Parameter `{$param->getName()}` of `$declared_in` not resolved.";
 		throw new RuntimeException( $message );
+	}
+
+	/**
+	 * Marks an entry as currently being resolved and detects dependency cycles.
+	 *
+	 * @throws RuntimeException
+	 */
+	protected function start_resolution( string $id ): void {
+		if ( isset( $this->resolving[ $id ] ) ) {
+			$chain = implode( ' → ', array_keys( $this->resolving ) ) . " → $id";
+			throw new RuntimeException( "Circular dependency detected: $chain" );
+		}
+
+		$this->resolving[ $id ] = true;
+	}
+
+	/**
+	 * Marks an entry as fully resolved or failed.
+	 */
+	protected function finish_resolution( string $id ): void {
+		unset( $this->resolving[ $id ] );
 	}
 
 }

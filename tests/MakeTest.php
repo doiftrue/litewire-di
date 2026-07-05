@@ -14,6 +14,7 @@ use Kama\MiniContainer\Tests\Fixtures\ClassWithScalarRequired;
 use Kama\MiniContainer\Tests\Fixtures\ClassDeepA;
 use Kama\MiniContainer\Tests\Fixtures\SomeInterface;
 use Kama\MiniContainer\Tests\Fixtures\InterfaceImpl;
+use Kama\MiniContainer\Tests\Fixtures\ClassCyclicA;
 use stdClass;
 
 final class MakeTest extends TestCase {
@@ -194,6 +195,13 @@ final class MakeTest extends TestCase {
 		$this->expectExceptionMessageIsOrContains( 'registered as an instance' );
 
 		$this->container->make( 'service' );
+	}
+
+	public function test__exception__cyclic_dependency(): void {
+		$this->expectException( RuntimeException::class );
+		$this->expectExceptionMessageIsOrContains( 'Circular dependency detected' );
+
+		$this->container->make( ClassCyclicA::class );
 	}
 
 }

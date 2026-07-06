@@ -1,10 +1,10 @@
 LiteWire DI Container
 =====================
 
-![CI](https://github.com/doiftrue/litewire-di/actions/workflows/ci.yml/badge.svg)
-![PHPStan level 9](https://img.shields.io/badge/PHPStan-level%209-brightgreen.svg)
-![PHP 7.4+](https://img.shields.io/badge/PHP-%3E%3D7.4-777bb4.svg)
-![Dependencies: none](https://img.shields.io/badge/dependencies-none-brightgreen.svg)
+![PHPUnit 100%](https://img.shields.io/badge/PHPUnit-100%25-green.svg)
+![PHPStan level 9](https://img.shields.io/badge/PHPStan-level%209-green.svg)
+![PHP 7.4 and 8.x](https://img.shields.io/badge/PHP-7.4%20%7C%208.x-777bb4.svg)
+![Dependencies: none](https://img.shields.io/badge/dependencies-none-green.svg)
 ![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)
 
 A tiny single-file autowire DI container for PHP and WordPress applications.
@@ -26,17 +26,6 @@ $container->has( Service::class );
 For larger projects, this makes migration to a bigger container easier.
 
 The container does not implement `Psr\Container\ContainerInterface` and does not depend on `psr/container`.
-
-
-### Container API
-```php
-$container->set( class-string $id, object|Closure|class-string $service ): void;
-$container->has( class-string $id ): bool;
-$container->get( class-string $id );
-$container->make( class-string $id, array $parameters = [] );
-```
-
-
 
 
 
@@ -98,14 +87,36 @@ add_action( 'plugins_loaded', function () use ( $container ) {
 ```
 
 
+has()
+-----
+Checks whether the service was registered, already resolved, or can be autowired as an existing class.
+
+API:
+```php
+$container->has( class-string $id ): bool;
+```
+
+Usage:
+```php
+$container->has( Service::class ); // true if registered, resolved, or an existing class
+$container->has( 'Unknown' );      // false
+```
+
+
 get()
 -----
 Gets a shared service instance – singleton. 
 
 If the service was already created, the same object is returned.
 
+API:
+```php
+$container->get( class-string $id );
+```
+
 ### get() – Autowiring 
 See basic usage above.
+
 
 ### get() – Shared services
 
@@ -151,21 +162,17 @@ $config = $container->get( Config::class ); // no error
 ```
 
 
-has()
------
-Checks whether the service was registered, already resolved, or can be autowired as an existing class.
-
-```php
-$container->has( Service::class ); // true if registered, resolved, or an existing class
-$container->has( 'Unknown' );      // false
-```
-
 
 set()
 -----
 Registers a service definition.
 
-Service IDs must be existing class or interface names. Arbitrary string IDs are not supported:
+API:
+```php
+$container->set( class-string $id, object|Closure|class-string $service ): void;
+```
+
+Service IDs must be existing class/interface name – regular string isn’t supported:
 
 ```php
 $container->set( Logger_Interface::class, File_Logger::class ); // valid
@@ -183,8 +190,6 @@ Accepted values:
 
 
 ### set() – Register an existing object
-
-`$logger` is an existing instance of `Logger`.
 ```php
 $container->set( Logger::class, $logger );
 $service = $container->get( Service::class );
@@ -192,7 +197,6 @@ $service = $container->get( Service::class );
 
 
 ### set() – Register an interface implementation
-
 ```php
 $container->set( Logger_Interface::class, File_Logger::class );
 $logger = $container->get( Logger_Interface::class );
@@ -200,7 +204,6 @@ $logger = $container->get( Logger_Interface::class );
 
 
 ### set() – Register a factory
-
 Factories must return an object.
 
 ```php
@@ -211,6 +214,7 @@ $container->set( Client::class, static function () {
 $client = $container->get( Client::class );
 ```
 
+### set() – Factory autowiring
 Factory parameters are autowired for both `get()` and `make()`:
 
 ```php
@@ -232,11 +236,17 @@ $container->set( Plugin::class, static function ( Container $container ) {
 $plugin = $container->get( Plugin::class );
 ```
 
+
 make()
 ------
-Creates a fresh object from a registered definition or class name. 
+Creates a fresh object each time from a registered definition or class name.
 
-Unlike `get()`, it does not store the created object in the container.
+Unlike `get()`, it does not store (caches) the created object in the container.
+
+API:
+```php
+$container->make( class-string $id, array $parameters = [] );
+```
 
 > [!NOTE]
 > Definitions registered as existing object instances cannot be used with `make()` - use `get()` to retrieve those instances.
@@ -260,13 +270,13 @@ var_dump( $a === $b ); // false
 
 This is useful for stateful objects, DTOs, handlers, commands, forms, and other short-lived objects.
 
+
 ### make() - Runtime parameters
-Named runtime parameters can be passed to `make()`.
+The second argument of `make()` is an array of constructor parameters, keyed by parameter name. Values provided in this array are passed directly to the constructor. Any missing class dependencies are resolved automatically by the container.
 
-Class dependencies are still autowired automatically. Scalar values must be passed manually or have default values.
-Unknown parameter names throw a `ContainerException` instead of being ignored.
+If the array contains a parameter name that does not exist in the constructor, `make()` throws a `ContainerException`.
 
-Such a call may also be treated as a factory that can be mocked in tests.
+This allows `make()` to be used as a factory for objects that combine autowired services with runtime values. The factory call can then be replaced with a mock in tests.
 
 ```php
 class Mailer {
@@ -280,6 +290,54 @@ $mailer = $container->make( Mailer::class, [
 	'from' => 'admin@example.com',
 ] );
 ```
+
+
+Benchmarks
+----------
+Performance benchmarks cover direct instantiation, cold and stored `get()`, cold and reflection-cached `make()`, factory invocation, and both cold and stored deep autowiring.
+
+Benchmark results depend on the machine and PHP version. Compare changes in the same environment rather than treating individual timings as universal limits.
+
+Results for PHP 8.5.5 (with OPcache enabled):
+
+| Subject                    | Runs × Rounds | Mem Peak |  Time (Variance) |
+|----------------------------|--------------:|---------:|-----------------:|
+| `direct_instantiation`     |    10 000 × 5 |  1.565mb | 0.078μs (±4.60%) |
+| `cold_get`                 |    10 000 × 5 | 16.488mb | 1.946μs (±1.68%) |
+| `stored_get`               |    10 000 × 5 |  1.565mb | 0.062μs (±6.05%) |
+| `cold_reflection_make`     |    10 000 × 5 | 15.928mb | 1.918μs (±0.74%) |
+| `cached_reflection_make`   |    10 000 × 5 |  1.565mb | 0.769μs (±0.45%) |
+| `registered_factory_make`  |    10 000 × 5 |  1.565mb | 0.418μs (±1.73%) |
+| `cold_deep_autowiring`     |    10 000 × 5 | 18.533mb | 2.744μs (±1.13%) |
+| `stored_deep_autowiring`   |    10 000 × 5 |  1.565mb | 0.061μs (±1.07%) |
+
+Legend:
+
+* **Runs** — time benchmark method executed per round.
+* **Rounds** — how many times the complete benchmark is repeated.
+* **Time** — average execution time per run (1 μs = 0.001 ms).
+* **Variance** — how much execution time differs between rounds.
+* **Mem Peak** — peak memory usage of the entire benchmark process.
+
+* `direct_instantiation` — creates an object and its dependencies manually using `new`, without the container.
+* `cold_get` — resolves a service for the first time.
+* `stored_get` — returns a service already created and stored by `get()`.
+* `cold_reflection_make` — creates a fresh object before reflection metadata has been cached.
+* `cached_reflection_make` — creates a fresh object using cached reflection metadata.
+* `registered_factory_make` — creates a fresh object using a registered closure factory.
+* `cold_deep_autowiring` — resolves and creates a complete multi-level dependency graph for the first time.
+* `stored_deep_autowiring` — returns the root service of an already resolved dependency graph.
+
+
+
+Conclusions from this run:
+
+* Returning an already stored service costs about 0.062 μs, close to the minimum overhead of a method call and array lookup. It does not create a new object.
+* Reusing reflection metadata makes `make()` about 2.5 times faster than resolving it with a cold container (0.769 μs versus 1.918 μs).
+* A registered factory is about 1.8 times faster than reflection-cached `make()` here (0.418 μs versus 0.769 μs), because it avoids reflective constructor resolution.
+* Cold deep autowiring is the most expensive scenario at 2.744 μs, while subsequent `get()` calls return the stored root object in about 0.061 μs without traversing the dependency graph again.
+* These figures are useful for comparing revisions in the same environment; they are not universal performance guarantees.
+
 
 
 Comparison with other containers
@@ -312,7 +370,6 @@ Best for:
 
 Limitations
 -----------
-
 * PSR-11-style API without real implementing the PSR-11 interfaces
 * No compiled container
 * No service providers
@@ -324,11 +381,20 @@ Limitations
 * Required scalar constructor parameters must be provided manually
 
 
+Inspired by
+-----------
+Inspired by [Simple DIC](https://github.com/renakdup/simple-dic)
 
-> [!NOTE]
-> Inspired by [Simple DIC](https://github.com/renakdup/simple-dic)
->
-> This container differs by:
-> 1. `set()` accepts only objects or class-strings (no primitives)
-> 2. `make()` — Supports runtime parameters
-> 3. Factory parameters in `get()` and `make()` are autowired consistently
+LiteWire DI keeps the same single-file, dependency-free approach, but uses a stricter, object-only service model:
+
+1. Service IDs must be existing class or interface names. Arbitrary string keys are rejected.
+1. The container stores only objects other values and arrays cannot be registered.
+1. `make()` accepts named runtime parameters for constructors and factories.
+1. `make()` respects registered class and factory definitions instead of resolving only the class passed as its ID.
+1. `has()` reports existing concrete classes that can be autowired without prior registration.
+1. Factory parameters are resolved in the same way as constructor parameters in both `get()` and `make()`. 
+1. Generic PHPDoc preserves the concrete return type of `get()` and `make()` for IDEs and static analysis.
+1. A factory may request the container, other services, default values, and runtime values.
+1. Factory results are validated: returning a primitive, array, or `null` throws a `ContainerException`.
+1. Circular dependencies are detected and reported with the resolution chain.
+1. Invalid or unsupported definitions and parameters fail with explicit exceptions.

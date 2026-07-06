@@ -12,14 +12,16 @@
     ],
     "scripts": {
         "phpunit": "./vendor/bin/phpunit",
-        "phpstan": "./vendor/bin/phpstan analyse"
+        "phpstan": "./vendor/bin/phpstan analyse",
+        "benchmark": "./vendor/bin/phpbench run --report=aggregate"
     },
     "require": {
         "php": ">=7.4"
     },
     "require-dev": {
-        "phpunit/phpunit": "~13.2.2",
-        "phpstan/phpstan": "^2.2.5"
+        "phpunit/phpunit": "^13.2.2",
+        "phpstan/phpstan": "^2.2.5",
+        "phpbench/phpbench": "^1.7"
     },
     "autoload": {
         "psr-4": {

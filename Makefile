@@ -1,6 +1,12 @@
 define php_run
-	docker run --rm $(1)  --name UNITEST_WP_COPY__php  --user 1000:1000  -v "$(CURDIR):/app"  -w /app \
-		composer sh -c "$2"
+	@mkdir -p "$(CURDIR)/tmp"
+	@printf '%s\n' 'opcache.enable=1' 'opcache.enable_cli=1' > "$(CURDIR)/tmp/opcache.ini"
+	@status=0; \
+	docker run --rm $(1)  --name UNITEST_WP_COPY__php  --user 1000:1000  -w /app \
+		-v "$(CURDIR):/app" \
+		-v "$(CURDIR)/tmp/opcache.ini:/usr/local/etc/php/conf.d/opcache.ini:ro"  \
+		composer sh -c "$2" || status=$$?; \
+	exit $$status
 endef
 
 php.connect:
@@ -18,6 +24,9 @@ phpunit:
 
 phpstan:
 	$(call php_run,, composer run phpstan -- --memory-limit=1G)
+
+benchmark:
+	$(call php_run,, composer run benchmark)
 
 # make php.run code='echo "Hello World!\n";'
 php.run:

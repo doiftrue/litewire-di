@@ -1,13 +1,37 @@
-LiteWire DI Container
-=====================
-
 ![PHPUnit 100%](https://img.shields.io/badge/PHPUnit-100%25-green.svg)
 ![PHPStan level 9](https://img.shields.io/badge/PHPStan-level%209-green.svg)
 ![PHP 7.4 and 8.x](https://img.shields.io/badge/PHP-7.4%20%7C%208.x-777bb4.svg)
 ![Dependencies: none](https://img.shields.io/badge/dependencies-none-green.svg)
 ![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)
 
+LiteWire DI Container
+=====================
+
 A tiny single-file autowire DI container for PHP and WordPress applications.
+
+
+Table of contents
+-----------------
+* [Design goals](#design-goals)
+* [Features](#features)
+* [Basic usage](#basic-usage)
+* [`has()`](#has)
+* [`get()`](#get)
+  * [Autowiring](#get--autowiring)
+  * [Shared services](#get--shared-services)
+  * [Scalar values](#get--scalar-values)
+* [`set()`](#set)
+  * [Register an existing object](#set--register-an-existing-object)
+  * [Register an interface implementation](#set--register-an-interface-implementation)
+  * [Register a factory](#set--register-a-factory)
+  * [Factory autowiring](#set--factory-autowiring)
+* [`make()`](#make)
+  * [New instances](#make---new-instances)
+  * [Runtime parameters](#make---runtime-parameters)
+* [Benchmarks](#benchmarks)
+* [Comparison with other containers](#comparison-with-other-containers)
+* [Limitations](#limitations)
+* [Inspired by](#inspired-by)
 
 
 Design goals
@@ -319,6 +343,8 @@ Legend:
 * **Variance** — how much execution time differs between rounds.
 * **Mem Peak** — peak memory usage of the entire benchmark process.
 
+Subject:
+
 * `direct_instantiation` — creates an object and its dependencies manually using `new`, without the container.
 * `cold_get` — resolves a service for the first time.
 * `stored_get` — returns a service already created and stored by `get()`.
@@ -328,15 +354,15 @@ Legend:
 * `cold_deep_autowiring` — resolves and creates a complete multi-level dependency graph for the first time.
 * `stored_deep_autowiring` — returns the root service of an already resolved dependency graph.
 
+Conclusions:
 
+Unlike larger containers such as PHP-DI, LiteWire DI does not keep a compiled container between requests. According to this benchmark, it would save only about 0.115 ms for 100 objects or 1.15 ms for 1,000. For small applications, this is usually too little to justify compilation, cache files, and cache invalidation.
 
-Conclusions from this run:
+A compiled container may still help large applications with thousands of services. LiteWire DI instead favors simpler setup and predictable runtime behavior for smaller dependency graphs.
 
-* Returning an already stored service costs about 0.062 μs, close to the minimum overhead of a method call and array lookup. It does not create a new object.
-* Reusing reflection metadata makes `make()` about 2.5 times faster than resolving it with a cold container (0.769 μs versus 1.918 μs).
-* A registered factory is about 1.8 times faster than reflection-cached `make()` here (0.418 μs versus 0.769 μs), because it avoids reflective constructor resolution.
-* Cold deep autowiring is the most expensive scenario at 2.744 μs, while subsequent `get()` calls return the stored root object in about 0.061 μs without traversing the dependency graph again.
-* These figures are useful for comparing revisions in the same environment; they are not universal performance guarantees.
+* Reflection caching makes `make()` about 2.5× faster.
+* A registered factory is about 1.8× faster than cached reflection.
+* Deep autowiring costs 2.744 μs initially, then 0.061 μs for stored results.
 
 
 

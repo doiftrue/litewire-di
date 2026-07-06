@@ -57,20 +57,56 @@ For larger projects, this makes migration to a bigger container easier.
 The container does not implement `Psr\Container\ContainerInterface` and does not depend on `psr/container`.
 
 
-
 Features
 --------
-* Single PHP file
-* No dependencies
-* Autowiring by constructor type hints
-* Shared services via get()
-* New instances via make()
-* Factory closures
-* Runtime constructor parameters for make()
-* Reflection cache
-* Object-first design
-* Convenient for WordPress plugins and themes
 
+- Keep the whole container in a single PHP file.
+- Use no external dependencies.
+- Register existing objects, classes, and closure factories with `set()`.
+- Autowire registered and unregistered classes.
+- Return shared service instances with `get()`.
+- Create a new instance every time with `make()`.
+- Pass named runtime parameters to `make()`.
+- Check whether classes and interfaces can be resolved with `has()`.
+- Use an object-first design with class and interface names as service IDs.
+- Use default values for scalar constructor parameters.
+- Use the modern Reflection API on PHP 8.
+- Inject the container itself as a dependency.
+- Cache Reflection data inside each container instance.
+- Detect circular dependencies and show the full resolution chain.
+- Include benchmarks, PHPDoc, and inline comments.
+- Include Composer configuration for publishing the package on Packagist.
+- Test the package with PHPUnit and PHPStan in CI.
+- Use PHPStan at level 9.
+
+Partially supported features:
+
+- Services can receive configuration through factories and runtime parameters, but the container does not have a separate configuration array.
+- Invokable objects can be wrapped in a closure, but objects with `__invoke()` are not treated as factories automatically.
+- The container uses normal PHP code for configuration. It does not provide attributes or a special configuration language.
+- The coverage badge exists, but CI does not generate or publish a coverage report yet.
+- The package is ready for Packagist, but publishing it is a separate manual step.
+
+
+
+Usage Guide
+--------
+LiteWire DI has four public methods:
+
+- `has()` checks if a service can be loaded.
+- `get()` returns a shared object (and create it if now exists).
+- `set()` tells the container how to create an object.
+- `make()` creates a new object.
+
+API:
+```php
+$container->has( class-string $id ): bool;
+$container->get( class-string $id );
+$container->set( class-string $id, object|Closure|class-string $service ): void;
+$container->make( class-string $id, array $parameters = [] );
+```
+
+All service IDs must be real class or interface names. Plain names such as `logger` are not supported.
 
 
 Basic usage
@@ -100,7 +136,7 @@ $service->run();
 ```
 
 
-### WordPress example
+WordPress example:
 
 ```php
 $container = new Container();
@@ -115,16 +151,15 @@ add_action( 'plugins_loaded', function () use ( $container ) {
 } );
 ```
 
+See also: [Complex WordPress plugin example](docs/wordpress-plugin.md)
+
+
 
 has()
 -----
-Checks whether the service was registered, already resolved, or can be autowired. For an unregistered
-class, its constructor and complete dependency graph must be resolvable by the container.
+Checks whether the service was registered, already resolved, or can be autowired.
 
-API:
-```php
-$container->has( class-string $id ): bool;
-```
+For an unregistered class, its constructor and complete dependency graph must be valid.
 
 Usage:
 ```php
@@ -138,11 +173,6 @@ get()
 Gets a shared service instance – singleton. 
 
 If the service was already created, the same object is returned.
-
-API:
-```php
-$container->get( class-string $id );
-```
 
 ### get() – Autowiring 
 See basic usage above.
@@ -196,11 +226,6 @@ $config = $container->get( Config::class ); // no error
 set()
 -----
 Registers a service definition.
-
-API:
-```php
-$container->set( class-string $id, object|Closure|class-string $service ): void;
-```
 
 Service IDs must be existing class/interface name – regular string isn’t supported:
 
@@ -273,18 +298,16 @@ Creates a fresh object each time from a registered definition or class name.
 
 Unlike `get()`, it does not store (caches) the created object in the container.
 
-API:
-```php
-$container->make( class-string $id, array $parameters = [] );
-```
-
 > [!NOTE]
 > Definitions registered as existing object instances cannot be used with `make()` - use `get()` to retrieve those instances.
->
+
+> [!NOTE]
 > Only the requested root object is created anew. Missing class dependencies are resolved through `get()`, so those dependencies are shared and reused by subsequent calls.
-> 
+
+> [!NOTE]
 > Class-string definitions are instantiated again, and closure factories are invoked on every call.
-> 
+
+> [!NOTE]
 > Factories must return an object but are responsible for whether that object is a new instance.
 
 
@@ -330,35 +353,36 @@ Benchmark results depend on the machine and PHP version. Compare changes in the 
 
 Results for PHP 8.5.5 (with OPcache enabled):
 
-| Subject                    | Runs × Rounds | Mem Peak |  Time (Variance) |
-|----------------------------|--------------:|---------:|-----------------:|
-| `direct_instantiation`     |    10 000 × 5 | 678.904kb | 0.078μs (±5.48%) |
-| `cold_get`                 |    10 000 × 5 |  16.449mb | 2.027μs (±0.65%) |
-| `stored_get`               |    10 000 × 5 | 678.880kb | 0.058μs (±4.47%) |
-| `cold_reflection_make`     |    10 000 × 5 |  15.889mb | 2.016μs (±1.19%) |
-| `cached_reflection_make`   |    10 000 × 5 | 678.904kb | 0.804μs (±3.53%) |
-| `registered_factory_make`  |    10 000 × 5 | 678.904kb | 0.416μs (±6.95%) |
-| `cold_deep_autowiring`     |    10 000 × 5 |  18.494mb | 2.895μs (±0.32%) |
-| `stored_deep_autowiring`   |    10 000 × 5 | 666.744kb | 0.059μs (±4.00%) |
+| Subject                   | Runs × Rounds |  Mem Peak |  Time (Variance) |
+|---------------------------|--------------:|----------:|-----------------:|
+| `direct_instantiation`    |    10 000 × 5 | 678.904kb | 0.078μs (±5.48%) |
+| `cold_get`                |    10 000 × 5 |  16.449mb | 2.027μs (±0.65%) |
+| `stored_get`              |    10 000 × 5 | 678.880kb | 0.058μs (±4.47%) |
+| `cold_reflection_make`    |    10 000 × 5 |  15.889mb | 2.016μs (±1.19%) |
+| `cached_reflection_make`  |    10 000 × 5 | 678.904kb | 0.804μs (±3.53%) |
+| `registered_factory_make` |    10 000 × 5 | 678.904kb | 0.416μs (±6.95%) |
+| `cold_deep_autowiring`    |    10 000 × 5 |  18.494mb | 2.895μs (±0.32%) |
+| `stored_deep_autowiring`  |    10 000 × 5 | 666.744kb | 0.059μs (±4.00%) |
 
 Legend:
 
-* **Runs** — time benchmark method executed per round.
-* **Rounds** — how many times the complete benchmark is repeated.
-* **Time** — modal execution time per run (1 μs = 0.001 ms).
-* **Variance** — how much execution time differs between rounds.
-* **Mem Peak** — peak memory usage of the entire benchmark process.
+- **Subject** — the operation measured by PHPBench.
+- **Runs** — time benchmark method executed per round.
+- **Rounds** — how many times the complete benchmark is repeated.
+- **Time** — modal execution time per run (1 μs = 0.001 ms).
+- **Variance** — how much execution time differs between rounds.
+- **Mem Peak** — peak memory usage of the entire benchmark process.
 
 Subject:
 
-* `direct_instantiation` — creates an object and its dependencies manually using `new`, without the container.
-* `cold_get` — resolves a service for the first time.
-* `stored_get` — returns a service already created and stored by `get()`.
-* `cold_reflection_make` — creates a fresh object before reflection metadata has been cached.
-* `cached_reflection_make` — creates a fresh object using cached reflection metadata.
-* `registered_factory_make` — creates a fresh object using a registered closure factory.
-* `cold_deep_autowiring` — resolves and creates a complete multi-level dependency graph for the first time.
-* `stored_deep_autowiring` — returns the root service of an already resolved dependency graph.
+- `direct_instantiation` — creates an object and its dependencies manually using `new`, without the container.
+- `cold_get` — resolves a service for the first time.
+- `stored_get` — returns a service already created and stored by `get()`.
+- `cold_reflection_make` — creates a fresh object before reflection metadata has been cached.
+- `cached_reflection_make` — creates a fresh object using cached reflection metadata.
+- `registered_factory_make` — creates a fresh object using a registered closure factory.
+- `cold_deep_autowiring` — resolves and creates a complete multi-level dependency graph for the first time.
+- `stored_deep_autowiring` — returns the root service of an already resolved dependency graph.
 
 Conclusions:
 
@@ -403,15 +427,29 @@ Best for:
 
 Limitations
 -----------
-* PSR-11-style API without real implementing the PSR-11 interfaces
-* No compiled container
-* No service providers
-* No scopes
-* No tags
-* No scalar parameter storage
-* No union/intersection type resolving
-* No variadic parameter resolving
-* Required scalar constructor parameters must be provided manually
+LiteWire DI intentionally does not include:
+
+- A compiled container.
+- Complex configuration files.
+- Attributes or a special configuration language (DSL).
+- A debug mode.
+- Arbitrary string service IDs.
+- Invokable objects used directly as factories.
+- Service definitions passed through the container constructor.
+- Service providers.
+- Scopes.
+- Tags.
+- Scalar parameter storage.
+- Union or intersection type resolution.
+- Variadic parameter resolution.
+
+Required scalar constructor parameters must be provided manually.
+
+These features would make the public API larger and less focused. The main advantage of LiteWire DI is its strict object model in one small PHP file.
+
+Full PSR-11 support is also a tradeoff because it requires a dependency on `psr/container`. LiteWire DI keeps a PSR-11-style API instead. A separate optional adapter may be added in the future.
+
+The main next tasks are to make `has()` fully correct, publish real test coverage, and test every supported PHP version.
 
 
 Inspired by

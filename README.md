@@ -9,6 +9,11 @@ LiteWire DI Container
 
 A tiny single-file autowire DI container for PHP and WordPress applications.
 
+Compatibility
+-------------
+
+LiteWire DI supports PHP 7.4 and every PHP 8 minor release from 8.0 through 8.5. Each supported version is tested by CI. Future PHP versions are added after compatibility has been verified.
+
 
 Table of contents
 -----------------
@@ -327,20 +332,20 @@ Results for PHP 8.5.5 (with OPcache enabled):
 
 | Subject                    | Runs × Rounds | Mem Peak |  Time (Variance) |
 |----------------------------|--------------:|---------:|-----------------:|
-| `direct_instantiation`     |    10 000 × 5 |  1.565mb | 0.078μs (±4.60%) |
-| `cold_get`                 |    10 000 × 5 | 16.488mb | 1.946μs (±1.68%) |
-| `stored_get`               |    10 000 × 5 |  1.565mb | 0.062μs (±6.05%) |
-| `cold_reflection_make`     |    10 000 × 5 | 15.928mb | 1.918μs (±0.74%) |
-| `cached_reflection_make`   |    10 000 × 5 |  1.565mb | 0.769μs (±0.45%) |
-| `registered_factory_make`  |    10 000 × 5 |  1.565mb | 0.418μs (±1.73%) |
-| `cold_deep_autowiring`     |    10 000 × 5 | 18.533mb | 2.744μs (±1.13%) |
-| `stored_deep_autowiring`   |    10 000 × 5 |  1.565mb | 0.061μs (±1.07%) |
+| `direct_instantiation`     |    10 000 × 5 | 678.904kb | 0.078μs (±5.48%) |
+| `cold_get`                 |    10 000 × 5 |  16.449mb | 2.027μs (±0.65%) |
+| `stored_get`               |    10 000 × 5 | 678.880kb | 0.058μs (±4.47%) |
+| `cold_reflection_make`     |    10 000 × 5 |  15.889mb | 2.016μs (±1.19%) |
+| `cached_reflection_make`   |    10 000 × 5 | 678.904kb | 0.804μs (±3.53%) |
+| `registered_factory_make`  |    10 000 × 5 | 678.904kb | 0.416μs (±6.95%) |
+| `cold_deep_autowiring`     |    10 000 × 5 |  18.494mb | 2.895μs (±0.32%) |
+| `stored_deep_autowiring`   |    10 000 × 5 | 666.744kb | 0.059μs (±4.00%) |
 
 Legend:
 
 * **Runs** — time benchmark method executed per round.
 * **Rounds** — how many times the complete benchmark is repeated.
-* **Time** — average execution time per run (1 μs = 0.001 ms).
+* **Time** — modal execution time per run (1 μs = 0.001 ms).
 * **Variance** — how much execution time differs between rounds.
 * **Mem Peak** — peak memory usage of the entire benchmark process.
 
@@ -357,7 +362,7 @@ Subject:
 
 Conclusions:
 
-Unlike larger containers such as PHP-DI, LiteWire DI does not keep a compiled container between requests. According to this benchmark, it would save only about 0.115 ms for 100 objects or 1.15 ms for 1,000. For small applications, this is usually too little to justify compilation, cache files, and cache invalidation.
+Unlike larger containers such as PHP-DI, LiteWire DI does not keep a compiled container between requests. According to this benchmark, it would save only about 0.121 ms for 100 objects or 1.21 ms for 1,000. For small applications, this is usually too little to justify compilation, cache files, and cache invalidation.
 
 A compiled container may still help large applications with thousands of services. LiteWire DI instead favors simpler setup and predictable runtime behavior for smaller dependency graphs.
 
@@ -365,6 +370,7 @@ A compiled container may still help large applications with thousands of service
 * A registered factory is about 1.8× faster than cached reflection.
 * Deep autowiring costs 2.744 μs initially, then 0.061 μs for stored results.
 
+See: [Detailed benchmark results](tools/benchmark/README.md)
 
 
 Comparison with other containers

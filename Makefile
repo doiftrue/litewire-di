@@ -26,7 +26,7 @@ phpstan:
 	$(call php_run,, composer run phpstan -- --memory-limit=1G)
 
 benchmark:
-	$(call php_run,, composer run benchmark)
+	$(call php_run,, composer update --working-dir=tools/benchmark --no-interaction --prefer-dist --no-progress && composer run --working-dir=tools/benchmark benchmark)
 
 # make php.run code='echo "Hello World!\n";'
 php.run:

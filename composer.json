@@ -11,13 +11,15 @@
         }
     ],
     "scripts": {
-        "phpunit": "./vendor/bin/phpunit"
+        "phpunit": "./vendor/bin/phpunit",
+        "phpstan": "./vendor/bin/phpstan analyse"
     },
     "require": {
         "php": ">=7.4"
     },
     "require-dev": {
-        "phpunit/phpunit": "~13.2.2"
+        "phpunit/phpunit": "~13.2.2",
+        "phpstan/phpstan": "^2.2.5"
     },
     "autoload": {
         "psr-4": {

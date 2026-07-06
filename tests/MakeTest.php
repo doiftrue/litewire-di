@@ -168,7 +168,7 @@ final class MakeTest extends TestCase {
 		$this->expectException( NotFoundException::class );
 		$this->expectExceptionMessageIsOrContains( 'Service ID `this-is-not-a-class`' );
 
-		$this->container->make( 'this-is-not-a-class' );
+		$this->container->make( 'this-is-not-a-class' ); // @phpstan-ignore argument.type
 	}
 
 	public function test__exception__factory_returns_non_object(): void {

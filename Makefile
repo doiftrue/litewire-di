@@ -16,6 +16,9 @@ composer.update:
 phpunit:
 	$(call php_run, -e WP_LINE="$(WP_LINE)", composer run phpunit -- --colors=always)
 
+phpstan:
+	$(call php_run,, composer run phpstan -- --memory-limit=1G)
+
 # make php.run code='echo "Hello World!\n";'
 php.run:
 	@if [ -z "$(strip $(value code))" ]; then \

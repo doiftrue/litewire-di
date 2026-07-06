@@ -1,0 +1,10 @@
+parameters:
+	level: 9
+	paths:
+		- Container.php
+		- tests
+	tmpDir: tmp/.phpstan
+	ignoreErrors:
+		-
+			identifier: constructor.unusedParameter
+			path: tests/Fixtures/ClassWithVariadic.php

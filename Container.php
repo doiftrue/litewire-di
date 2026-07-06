@@ -7,9 +7,10 @@
  *
  * Author: Timur Kamaev
  * Author Site: https://wp-kama.com/
+ * Source: https://github.com/doiftrue/litewire-di
  * Original Idea: Andrei Pisarevskii (https://github.com/renakdup/simple-dic)
  *
- * Version: 1.1.0
+ * Version: 1.1.1
  */
 
 namespace Kama\LiteWireDI;
@@ -35,21 +36,29 @@ class Container {
 
 	/**
 	 * Service definitions (creation rules).
+	 *
+	 * @var array<string, object|Closure|class-string>
 	 */
 	protected array $definitions = [];
 
 	/**
 	 * Resolved shared instances.
+	 *
+	 * @var array<string, object>
 	 */
 	protected array $instances = [];
 
 	/**
 	 * ReflectionClass cache (for autowiring).
+	 *
+	 * @var array<class-string, ReflectionClass<object>>
 	 */
 	protected array $reflection_cache = [];
 
 	/**
 	 * Entry IDs currently being resolved (cycle detection).
+	 *
+	 * @var array<string, true>
 	 */
 	protected array $resolving = [];
 
@@ -79,8 +88,10 @@ class Container {
 	 * a class name, or a factory (closure) that creates it.
 	 * Replacing an existing service removes its stored instance.
 	 *
-	 * @param class-string                $id      Identifier of the entry to look for.
+	 * @param string                      $id      Identifier of the entry to look for.
 	 * @param object|Closure|class-string $service Service definition, class name, ready instance or factory.
+	 *
+	 * @phpstan-param mixed $service Runtime validation intentionally accepts an unchecked input.
 	 *
 	 * @throws InvalidArgumentException
 	 */
@@ -105,11 +116,11 @@ class Container {
 	 * Loads a registered service or automatically creates the requested class.
 	 * Stores the resolved service as a shared instance for later calls.
 	 *
-	 * @template T of object
-	 * @param class-string<T> $id Identifier of the entry to look for.
+	 * @template TService of object
+	 * @param class-string<TService> $id Identifier of the entry to look for.
 	 *
-	 * @return T NOTE: Do not add a native return type. Declaring `: object` prevents PhpStorm
-	 *           from reliably inferring the concrete return type from `class-string<T>`.
+	 * @return TService NOTE: Do not add a native return type. Declaring `: object` prevents PhpStorm
+	 *                  from reliably inferring the concrete return type from `class-string<TService>`.
 	 *
 	 * @throws NotFoundException No entry was found for identifier.
 	 * @throws ContainerException Error while retrieving the entry.
@@ -120,13 +131,17 @@ class Container {
 		}
 
 		if ( array_key_exists( $id, $this->instances ) ) {
-			return $this->instances[ $id ];
+			/** @var TService $instance */
+			$instance = $this->instances[ $id ];
+			return $instance;
 		}
 
 		$this->start_resolution( $id );
 
 		try {
-			return $this->instances[ $id ] = $this->resolve( $id );
+			/** @var TService $instance */
+			$instance = $this->resolve( $id );
+			return $this->instances[ $id ] = $instance;
 		}
 		finally {
 			$this->finish_resolution( $id );
@@ -138,12 +153,12 @@ class Container {
 	 * Unlike get(), it does not store the result as a shared instance.
 	 * Named parameters can be used to provide specific values for constructor arguments.
 	 *
-	 * @template T of object
-	 * @param class-string<T>      $id         Identifier of the entry to look for.
+	 * @template TService of object
+	 * @param class-string<TService> $id         Identifier of the entry to look for.
 	 * @param array<string, mixed> $parameters Named parameters for the constructor.
 	 *
-	 * @return T NOTE: Do not add a native return type. Declaring `: object` prevents PhpStorm
-	 *           from reliably inferring the concrete return type from `class-string<T>`.
+	 * @return TService NOTE: Do not add a native return type. Declaring `: object` prevents PhpStorm
+	 *                  from reliably inferring the concrete return type from `class-string<TService>`.
 	 *
 	 * @throws ReflectionException
 	 * @throws ContainerException
@@ -159,7 +174,9 @@ class Container {
 			$definition = $this->definitions[ $id ] ?? $id;
 
 			if( $definition instanceof Closure ){
-				return $this->invoke_factory( $id, $definition, $parameters );
+				/** @var TService $instance */
+				$instance = $this->invoke_factory( $id, $definition, $parameters );
+				return $instance;
 			}
 
 			if( is_object( $definition ) ){
@@ -168,8 +185,10 @@ class Container {
 				);
 			}
 
-			if( is_string( $definition ) && class_exists( $definition ) ){
-				return $this->resolve_class( $definition, $parameters );
+			if( class_exists( $definition ) ){
+				/** @var TService $instance */
+				$instance = $this->resolve_class( $definition, $parameters );
+				return $instance;
 			}
 
 			throw new ContainerException( "Definition `$id` could not be resolved because class not exist." );
@@ -195,7 +214,11 @@ class Container {
 				return $this->resolve_class( $def );
 			}
 
-			return $def;
+			if ( is_object( $def ) ) {
+				return $def;
+			}
+
+			throw new ContainerException( "Definition `$id` could not be resolved because class not exist." );
 		}
 
 		if ( class_exists( $id ) ) {
@@ -266,8 +289,10 @@ class Container {
 	 * Prepares arguments for a constructor or factory in the required order.
 	 * Uses named runtime values first and resolves any remaining arguments automatically.
 	 *
-	 * @param ReflectionParameter[] $params
+	 * @param list<ReflectionParameter> $params
 	 * @param array<string, mixed>  $runtime_params  Runtime parameters by name.
+	 *
+	 * @return list<mixed>
 	 *
 	 * @throws ContainerException
 	 * @throws ReflectionException
@@ -289,8 +314,8 @@ class Container {
 	/**
 	 * Validates a constructor or factory signature and its runtime parameters.
 	 *
-	 * @param ReflectionParameter[] $params
-	 * @param array<string, mixed>  $runtime_params  Runtime parameters by name.
+	 * @param list<ReflectionParameter> $params          Constructor or factory parameters.
+	 * @param array<string, mixed>      $runtime_params  Runtime parameters by name.
 	 *
 	 * @throws ContainerException
 	 */
@@ -329,7 +354,9 @@ class Container {
 		$type = $param->getType();
 
 		if ( $type instanceof ReflectionNamedType && ! $type->isBuiltin() ) {
-			return $this->get( $type->getName() );
+			/** @var class-string $dependency */
+			$dependency = $type->getName();
+			return $this->get( $dependency );
 		}
 
 		if ( $param->isOptional() ) {

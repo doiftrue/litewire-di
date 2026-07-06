@@ -1,6 +1,12 @@
 LiteWire DI Container
 =====================
 
+![CI](https://github.com/doiftrue/litewire-di/actions/workflows/ci.yml/badge.svg)
+![PHPStan level 9](https://img.shields.io/badge/PHPStan-level%209-brightgreen.svg)
+![PHP 7.4+](https://img.shields.io/badge/PHP-%3E%3D7.4-777bb4.svg)
+![Dependencies: none](https://img.shields.io/badge/dependencies-none-brightgreen.svg)
+![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)
+
 A tiny single-file autowire DI container for PHP and WordPress applications.
 
 

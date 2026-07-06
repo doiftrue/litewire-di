@@ -199,7 +199,7 @@ final class GetTest extends TestCase {
 		$this->expectException( NotFoundException::class );
 		$this->expectExceptionMessageIsOrContains( 'Service ID `non-existent-service`' );
 
-		$this->container->get( 'non-existent-service' );
+		$this->container->get( 'non-existent-service' ); // @phpstan-ignore argument.type
 	}
 
 	public function test__exception__unresolvable_scalar(): void {

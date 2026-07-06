@@ -197,14 +197,14 @@ final class GetTest extends TestCase {
 
 	public function test__exception__service_not_found(): void {
 		$this->expectException( NotFoundException::class );
-		$this->expectExceptionMessageIsOrContains( 'Service ID `non-existent-service`' );
+		$this->expectExceptionMessage( 'Service ID `non-existent-service`' );
 
 		$this->container->get( 'non-existent-service' ); // @phpstan-ignore argument.type
 	}
 
 	public function test__exception__unresolvable_scalar(): void {
 		$this->expectException( RuntimeException::class );
-		$this->expectExceptionMessageIsOrContains( 'not resolved' );
+		$this->expectExceptionMessage( 'not resolved' );
 
 		$this->container->get( ClassWithScalarRequired::class );
 	}
@@ -215,7 +215,7 @@ final class GetTest extends TestCase {
 		} );
 
 		$this->expectException( RuntimeException::class );
-		$this->expectExceptionMessageIsOrContains( 'must return an object' );
+		$this->expectExceptionMessage( 'must return an object' );
 
 		$this->container->get( stdClass::class );
 	}
@@ -228,14 +228,14 @@ final class GetTest extends TestCase {
 
 	public function test__exception__unbound_abstract(): void {
 		$this->expectException( RuntimeException::class );
-		$this->expectExceptionMessageIsOrContains( 'is not instantiable' );
+		$this->expectExceptionMessage( 'is not instantiable' );
 
 		$this->container->get( ClassNeedsAbstract::class );
 	}
 
 	public function test__exception__private_constructor(): void {
 		$this->expectException( RuntimeException::class );
-		$this->expectExceptionMessageIsOrContains( 'is not instantiable' );
+		$this->expectExceptionMessage( 'is not instantiable' );
 
 		$this->container->get( ClassPrivateConstructor::class );
 	}
@@ -245,7 +245,7 @@ final class GetTest extends TestCase {
 	 */
 	public function test__exception__cyclic_dependency(): void {
 		$this->expectException( RuntimeException::class );
-		$this->expectExceptionMessageIsOrContains( 'Circular dependency detected' );
+		$this->expectExceptionMessage( 'Circular dependency detected' );
 
 		$this->container->get( ClassCyclicA::class );
 	}
@@ -258,7 +258,7 @@ final class GetTest extends TestCase {
 		} );
 
 		$this->expectException( RuntimeException::class );
-		$this->expectExceptionMessageIsOrContains( "$service → $service" );
+		$this->expectExceptionMessage( "$service → $service" );
 
 		$this->container->get( $service );
 	}
@@ -275,14 +275,14 @@ final class GetTest extends TestCase {
 		} );
 
 		$this->expectException( RuntimeException::class );
-		$this->expectExceptionMessageIsOrContains( "$service_a → $service_b → $service_a" );
+		$this->expectExceptionMessage( "$service_a → $service_b → $service_a" );
 
 		$this->container->get( $service_a );
 	}
 
 	public function test__exception__recursive_get_from_constructor(): void {
 		$this->expectException( RuntimeException::class );
-		$this->expectExceptionMessageIsOrContains( ClassGetsItself::class . ' → ' . ClassGetsItself::class );
+		$this->expectExceptionMessage( ClassGetsItself::class . ' → ' . ClassGetsItself::class );
 
 		$this->container->get( ClassGetsItself::class );
 	}

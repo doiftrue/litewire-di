@@ -89,14 +89,14 @@ final class SetTest extends TestCase {
 
 	public function test__exception_on_unknown_class_string(): void {
 		$this->expectException( InvalidArgumentException::class );
-		$this->expectExceptionMessageIsOrContains( 'does not exist' );
+		$this->expectExceptionMessage( 'does not exist' );
 
 		$this->container->set( SimpleClass::class, 'UnknownClass' );
 	}
 
 	public function test__exception_on_string_id(): void {
 		$this->expectException( InvalidArgumentException::class );
-		$this->expectExceptionMessageIsOrContains( 'must be an existing class or interface' );
+		$this->expectExceptionMessage( 'must be an existing class or interface' );
 
 		$this->container->set( 'service', SimpleClass::class ); // @phpstan-ignore argument.type
 	}

@@ -166,7 +166,7 @@ final class MakeTest extends TestCase {
 
 	public function test__exception__non_existent_class(): void {
 		$this->expectException( NotFoundException::class );
-		$this->expectExceptionMessageIsOrContains( 'Service ID `this-is-not-a-class`' );
+		$this->expectExceptionMessage( 'Service ID `this-is-not-a-class`' );
 
 		$this->container->make( 'this-is-not-a-class' ); // @phpstan-ignore argument.type
 	}
@@ -177,14 +177,14 @@ final class MakeTest extends TestCase {
 		} );
 
 		$this->expectException( RuntimeException::class );
-		$this->expectExceptionMessageIsOrContains( 'must return an object' );
+		$this->expectExceptionMessage( 'must return an object' );
 
 		$this->container->make( stdClass::class );
 	}
 
 	public function test__exception__unresolvable_scalar_without_runtime_param(): void {
 		$this->expectException( RuntimeException::class );
-		$this->expectExceptionMessageIsOrContains( 'not resolved' );
+		$this->expectExceptionMessage( 'not resolved' );
 
 		$this->container->make( ClassWithScalarRequired::class );
 	}
@@ -194,35 +194,35 @@ final class MakeTest extends TestCase {
 		$this->container->set( SimpleClass::class, $obj );
 
 		$this->expectException( RuntimeException::class );
-		$this->expectExceptionMessageIsOrContains( 'registered as an instance' );
+		$this->expectExceptionMessage( 'registered as an instance' );
 
 		$this->container->make( SimpleClass::class );
 	}
 
 	public function test__exception__cyclic_dependency(): void {
 		$this->expectException( RuntimeException::class );
-		$this->expectExceptionMessageIsOrContains( 'Circular dependency detected' );
+		$this->expectExceptionMessage( 'Circular dependency detected' );
 
 		$this->container->make( ClassCyclicA::class );
 	}
 
 	public function test__exception__unknown_runtime_parameter(): void {
 		$this->expectException( RuntimeException::class );
-		$this->expectExceptionMessageIsOrContains( 'Unknown runtime parameter(s): `unknown`' );
+		$this->expectExceptionMessage( 'Unknown runtime parameter(s): `unknown`' );
 
 		$this->container->make( ClassWithDefaults::class, [ 'unknown' => 'value' ] );
 	}
 
 	public function test__exception__runtime_parameter_for_class_without_constructor(): void {
 		$this->expectException( RuntimeException::class );
-		$this->expectExceptionMessageIsOrContains( 'has no constructor and does not accept runtime parameters' );
+		$this->expectExceptionMessage( 'has no constructor and does not accept runtime parameters' );
 
 		$this->container->make( SimpleClass::class, [ 'unknown' => 'value' ] );
 	}
 
 	public function test__exception__variadic_parameter(): void {
 		$this->expectException( RuntimeException::class );
-		$this->expectExceptionMessageIsOrContains( 'Variadic parameter `names`' );
+		$this->expectExceptionMessage( 'Variadic parameter `names`' );
 
 		$this->container->make( ClassWithVariadic::class );
 	}

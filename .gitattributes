@@ -1,0 +1,17 @@
+# Files
+/.github              export-ignore
+/.gitattributes       export-ignore
+/.gitignore           export-ignore
+/Makefile             export-ignore
+/composer.lock        export-ignore
+/phpstan.neon         export-ignore
+/phpunit.coverage.xml export-ignore
+/phpunit.xml          export-ignore
+
+# Folders
+/benchmarks           export-ignore
+/docs                 export-ignore
+/tests                export-ignore
+/tmp                  export-ignore
+/tools                export-ignore
+

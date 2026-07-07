@@ -84,7 +84,7 @@ Partially supported features:
 - Services can receive configuration through factories and runtime parameters, but the container does not have a separate configuration array.
 - Invokable objects can be wrapped in a closure, but objects with `__invoke()` are not treated as factories automatically.
 - The container uses normal PHP code for configuration. It does not provide attributes or a special configuration language.
-- The coverage badge exists, but CI does not generate or publish a coverage report yet.
+- CI generates a test coverage report for `Container.php`; the badge remains static.
 - The package is ready for Packagist, but publishing it is a separate manual step.
 
 

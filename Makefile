@@ -4,8 +4,8 @@ define php_run
 	@status=0; \
 	docker run --rm $(1)  --name UNITEST_WP_COPY__php  --user 1000:1000  -w /app \
 		-v "$(CURDIR):/app" \
-		-v "$(CURDIR)/tmp/opcache.ini:/usr/local/etc/php/conf.d/opcache.ini:ro"  \
-		composer sh -c "$2" || status=$$?; \
+		-v "$(CURDIR)/tmp/opcache.ini:/usr/local/etc/php/conf.d/opcache.ini:ro" \
+		chialab/php-pcov:8.5 sh -c "$2" || status=$$?; \
 	exit $$status
 endef
 
@@ -21,6 +21,9 @@ composer.update:
 
 phpunit:
 	$(call php_run, -e WP_LINE="$(WP_LINE)", composer run phpunit -- --colors=always)
+
+coverage:
+	$(call php_run,, composer run coverage -- --colors=always --coverage-html tmp/litewire-coverage)
 
 phpstan:
 	$(call php_run,, composer run phpstan -- --memory-limit=1G)

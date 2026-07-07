@@ -12,6 +12,7 @@
     ],
     "scripts": {
         "phpunit": "./vendor/bin/phpunit",
+        "coverage": "./vendor/bin/phpunit --configuration phpunit.coverage.xml --coverage-text",
         "phpstan": "./vendor/bin/phpstan analyse"
     },
     "require": {

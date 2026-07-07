@@ -11,6 +11,7 @@ use Kama\LiteWireDI\Tests\Fixtures\ClassCyclicA;
 use Kama\LiteWireDI\Tests\Fixtures\ClassNeedsInterface;
 use Kama\LiteWireDI\Tests\Fixtures\ClassPrivateConstructor;
 use Kama\LiteWireDI\Tests\Fixtures\ClassWithScalarRequired;
+use Kama\LiteWireDI\Tests\Fixtures\ClassWithVariadic;
 use Kama\LiteWireDI\Tests\Fixtures\InterfaceImpl;
 use Kama\LiteWireDI\Tests\Fixtures\SimpleClass;
 use Kama\LiteWireDI\Tests\Fixtures\SomeInterface;
@@ -70,6 +71,10 @@ final class HasTest extends TestCase {
 
 	public function test__class_with_required_scalar_is_not_autowireable(): void {
 		self::assertFalse( $this->container->has( ClassWithScalarRequired::class ) );
+	}
+
+	public function test__class_with_variadic_parameter_is_not_autowireable(): void {
+		self::assertFalse( $this->container->has( ClassWithVariadic::class ) );
 	}
 
 	public function test__class_with_unbound_interface_is_not_autowireable(): void {

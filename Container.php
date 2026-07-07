@@ -181,13 +181,11 @@ class Container {
 				);
 			}
 
-			if( class_exists( $def ) ){
-				/** @var TService $instance */
-				$instance = $this->resolve_class( $def, $parameters );
-				return $instance;
-			}
-
-			throw new ContainerException( "Definition `$id` could not be resolved because class not exist." );
+			/**
+			 * At this point the definition is guaranteed exists.
+			 * @var TService
+			 */
+			return $this->resolve_class( $def, $parameters );
 		}
 		finally {
 			$this->end_resolving( $id );
@@ -205,15 +203,12 @@ class Container {
 				return $this->invoke_factory( $id, $def );
 			}
 
-			if ( is_string( $def ) && class_exists( $def ) ) {
-				return $this->resolve_class( $def );
-			}
-
 			if ( is_object( $def ) ) {
 				return $def;
 			}
 
-			throw new ContainerException( "Definition `$id` could not be resolved because class not exist." );
+			// At this point the definition is guaranteed exists.
+			return $this->resolve_class( $def );
 		}
 
 		if ( class_exists( $id ) ) {
@@ -271,11 +266,12 @@ class Container {
 			$params = $constructor->getParameters();
 			$resolved_params = $this->resolve_parameters( $params, $runtime_params );
 		}
+		// Generally this catch cannot be reached through the public API, but better have it just in case.
+		// @codeCoverageIgnoreStart
 		catch ( ReflectionException $e ) {
-			throw new ContainerException(
-				"Service `$class` could not be resolved due the reflection issue: `{$e->getMessage()}`"
-			);
+			throw new ContainerException( "Service `$class` could not be resolved due the reflection issue: `{$e->getMessage()}`" );
 		}
+		// @codeCoverageIgnoreEnd
 
 		return new $class( ...$resolved_params );
 	}
@@ -387,43 +383,38 @@ class Container {
 
 		$checking[ $class ] = true;
 
-		try {
-			$reflection = $this->reflection_cache[ $class ] ??= new ReflectionClass( $class );
+		$reflection = $this->reflection_cache[ $class ] ??= new ReflectionClass( $class );
 
-			if ( ! $reflection->isInstantiable() ) {
+		if ( ! $reflection->isInstantiable() ) {
+			return false;
+		}
+
+		$constructor = $reflection->getConstructor();
+		if ( ! $constructor ) {
+			return true;
+		}
+
+		foreach ( $constructor->getParameters() as $param ) {
+			if ( $param->isVariadic() ) {
 				return false;
 			}
 
-			$constructor = $reflection->getConstructor();
-			if ( ! $constructor ) {
-				return true;
-			}
-
-			foreach ( $constructor->getParameters() as $param ) {
-				if ( $param->isVariadic() ) {
+			$dependency = $this->get_parameter_class( $param );
+			if ( $dependency ) {
+				if (
+					! isset( $this->instances[ $dependency ] )
+					&& ! isset( $this->definitions[ $dependency ] )
+					&& ( ! class_exists( $dependency ) || ! $this->can_resolve_class( $dependency, $checking ) )
+				) {
 					return false;
 				}
 
-				$dependency = $this->get_parameter_class( $param );
-				if ( $dependency ) {
-					if (
-						! isset( $this->instances[ $dependency ] )
-						&& ! isset( $this->definitions[ $dependency ] )
-						&& ( ! class_exists( $dependency ) || ! $this->can_resolve_class( $dependency, $checking ) )
-					) {
-						return false;
-					}
-
-					continue;
-				}
-
-				if ( ! $param->isOptional() ) {
-					return false;
-				}
+				continue;
 			}
-		}
-		catch ( ReflectionException $e ) {
-			return false;
+
+			if ( ! $param->isOptional() ) {
+				return false;
+			}
 		}
 
 		return true;

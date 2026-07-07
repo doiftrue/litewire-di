@@ -77,4 +77,15 @@ jobs:
         run: composer update --no-interaction --prefer-dist --no-progress
 
       - name: Generate coverage report
-        run: composer coverage -- --colors=always
+        shell: bash
+        run: |
+          set -o pipefail
+          composer coverage -- --colors=never | tee coverage.txt
+
+          {
+            echo '## Code coverage'
+            echo
+            echo '```text'
+            cat coverage.txt
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"

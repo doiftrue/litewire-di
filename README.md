@@ -353,16 +353,16 @@ Benchmark results depend on the machine and PHP version. Compare changes in the 
 
 Results for PHP 8.5.5 (with OPcache enabled):
 
-| Subject                        | Runs × Rounds |  Mem Peak |  Time (Variance) |
-|--------------------------------|--------------:|----------:|-----------------:|
-| `direct_instantiation`         |    10 000 × 5 | 678.904kb | 0.078μs (±5.48%) |
-| `get__cold`                    |    10 000 × 5 |  16.449mb | 2.027μs (±0.65%) |
-| `get__stored`                  |    10 000 × 5 | 678.880kb | 0.058μs (±4.47%) |
-| `make__reflection__cold`       |    10 000 × 5 |  15.889mb | 2.016μs (±1.19%) |
-| `make__reflection__cached`     |    10 000 × 5 | 678.904kb | 0.804μs (±3.53%) |
-| `make__registered_factory`     |    10 000 × 5 | 678.904kb | 0.416μs (±6.95%) |
-| `get__deep_autowiring__cold`   |    10 000 × 5 |  18.494mb | 2.895μs (±0.32%) |
-| `get__deep_autowiring__stored` |    10 000 × 5 | 666.744kb | 0.059μs (±4.00%) |
+| Subject                      | Runs × Rounds |  Mem Peak |  Time (Variance) |
+|------------------------------|--------------:|----------:|-----------------:|
+| direct_instantiation         |    10 000 × 5 | 678.904kb | 0.078μs (±5.48%) |
+| get__cold                    |    10 000 × 5 |  16.449mb | 2.027μs (±0.65%) |
+| get__stored                  |    10 000 × 5 | 678.880kb | 0.058μs (±4.47%) |
+| get__deep_autowiring__cold   |    10 000 × 5 |  18.494mb | 2.895μs (±0.32%) |
+| get__deep_autowiring__stored |    10 000 × 5 | 666.744kb | 0.059μs (±4.00%) |
+| make__reflection__cold       |    10 000 × 5 |  15.889mb | 2.016μs (±1.19%) |
+| make__reflection__cached     |    10 000 × 5 | 678.904kb | 0.804μs (±3.53%) |
+| make__registered_factory     |    10 000 × 5 | 678.904kb | 0.416μs (±6.95%) |
 
 Legend:
 
@@ -372,17 +372,6 @@ Legend:
 - **Time** — modal execution time per run (1 μs = 0.001 ms).
 - **Variance** — how much execution time differs between rounds.
 - **Mem Peak** — peak memory usage of the entire benchmark process.
-
-Subject:
-
-- `direct_instantiation` — creates an object and its dependencies manually using `new`, without the container.
-- `get__cold` — resolves a service for the first time.
-- `get__stored` — returns a service already created and stored by `get()`.
-- `make__reflection__cold` — creates a fresh object before reflection metadata has been cached.
-- `make__reflection__cached` — creates a fresh object using cached reflection metadata.
-- `make__registered_factory` — creates a fresh object using a registered closure factory.
-- `get__deep_autowiring__cold` — resolves and creates a complete multi-level dependency graph for the first time.
-- `get__deep_autowiring__stored` — returns the root service of an already resolved dependency graph.
 
 Conclusions:
 
@@ -394,7 +383,7 @@ A compiled container may still help large applications with thousands of service
 * A registered factory is about 1.8× faster than cached reflection.
 * Deep autowiring costs 2.744 μs initially, then 0.061 μs for stored results.
 
-See: [Detailed benchmark results](tools/benchmark/README.md)
+See: [Detailed benchmark results](benchmarks/README.md)
 
 
 Comparison with other containers

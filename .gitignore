@@ -1,9 +1,9 @@
 /vendor/
 /tmp/
 
+/benchmarks/vendor/
+/benchmarks/composer.lock
+
 /composer.lock
 /__*
 
-# tools
-/tools/benchmark/composer.lock
-/tools/benchmark/vendor/

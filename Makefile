@@ -15,9 +15,9 @@ php.connect:
 composer:
 	$(call php_run,, composer  $(filter-out $@,$(MAKECMDGOALS)))
 composer.install:
-	$(call php_run,, composer install  $(filter-out $@,$(MAKECMDGOALS)))
+	$(call php_run,, composer install)
 composer.update:
-	$(call php_run,, composer update  $(filter-out $@,$(MAKECMDGOALS)))
+	$(call php_run,, composer update)
 
 phpunit:
 	$(call php_run, -e WP_LINE="$(WP_LINE)", composer run phpunit -- --colors=always)
@@ -29,7 +29,7 @@ phpstan:
 	$(call php_run,, composer run phpstan -- --memory-limit=1G)
 
 benchmark:
-	$(call php_run,, composer update --working-dir=tools/benchmark --no-interaction --prefer-dist --no-progress && composer run --working-dir=tools/benchmark benchmark)
+	$(call php_run,, composer install --working-dir=benchmarks --no-interaction --prefer-dist --no-progress && composer run --working-dir=benchmarks benchmark)
 
 # make php.run code='echo "Hello World!\n";'
 php.run:

@@ -1,0 +1,16 @@
+{
+    "name": "doiftrue/litewire-di-benchmark",
+    "description": "Dev-tools for benchmarking LiteWire DI.",
+    "scripts": {
+        "benchmark": "phpbench run --config=phpbench.json --report=aggregate"
+    },
+    "require-dev": {
+        "phpbench/phpbench": "^1.7"
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Kama\\LiteWireDI\\Tests\\": "../tests/",
+            "Kama\\LiteWireDI\\": "../"
+        }
+    }
+}

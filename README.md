@@ -353,16 +353,16 @@ Benchmark results depend on the machine and PHP version. Compare changes in the 
 
 Results for PHP 8.5.5 (with OPcache enabled):
 
-| Subject                   | Runs × Rounds |  Mem Peak |  Time (Variance) |
-|---------------------------|--------------:|----------:|-----------------:|
-| `direct_instantiation`    |    10 000 × 5 | 678.904kb | 0.078μs (±5.48%) |
-| `cold_get`                |    10 000 × 5 |  16.449mb | 2.027μs (±0.65%) |
-| `stored_get`              |    10 000 × 5 | 678.880kb | 0.058μs (±4.47%) |
-| `cold_reflection_make`    |    10 000 × 5 |  15.889mb | 2.016μs (±1.19%) |
-| `cached_reflection_make`  |    10 000 × 5 | 678.904kb | 0.804μs (±3.53%) |
-| `registered_factory_make` |    10 000 × 5 | 678.904kb | 0.416μs (±6.95%) |
-| `cold_deep_autowiring`    |    10 000 × 5 |  18.494mb | 2.895μs (±0.32%) |
-| `stored_deep_autowiring`  |    10 000 × 5 | 666.744kb | 0.059μs (±4.00%) |
+| Subject                        | Runs × Rounds |  Mem Peak |  Time (Variance) |
+|--------------------------------|--------------:|----------:|-----------------:|
+| `direct_instantiation`         |    10 000 × 5 | 678.904kb | 0.078μs (±5.48%) |
+| `get__cold`                    |    10 000 × 5 |  16.449mb | 2.027μs (±0.65%) |
+| `get__stored`                  |    10 000 × 5 | 678.880kb | 0.058μs (±4.47%) |
+| `make__reflection__cold`       |    10 000 × 5 |  15.889mb | 2.016μs (±1.19%) |
+| `make__reflection__cached`     |    10 000 × 5 | 678.904kb | 0.804μs (±3.53%) |
+| `make__registered_factory`     |    10 000 × 5 | 678.904kb | 0.416μs (±6.95%) |
+| `get__deep_autowiring__cold`   |    10 000 × 5 |  18.494mb | 2.895μs (±0.32%) |
+| `get__deep_autowiring__stored` |    10 000 × 5 | 666.744kb | 0.059μs (±4.00%) |
 
 Legend:
 
@@ -376,13 +376,13 @@ Legend:
 Subject:
 
 - `direct_instantiation` — creates an object and its dependencies manually using `new`, without the container.
-- `cold_get` — resolves a service for the first time.
-- `stored_get` — returns a service already created and stored by `get()`.
-- `cold_reflection_make` — creates a fresh object before reflection metadata has been cached.
-- `cached_reflection_make` — creates a fresh object using cached reflection metadata.
-- `registered_factory_make` — creates a fresh object using a registered closure factory.
-- `cold_deep_autowiring` — resolves and creates a complete multi-level dependency graph for the first time.
-- `stored_deep_autowiring` — returns the root service of an already resolved dependency graph.
+- `get__cold` — resolves a service for the first time.
+- `get__stored` — returns a service already created and stored by `get()`.
+- `make__reflection__cold` — creates a fresh object before reflection metadata has been cached.
+- `make__reflection__cached` — creates a fresh object using cached reflection metadata.
+- `make__registered_factory` — creates a fresh object using a registered closure factory.
+- `get__deep_autowiring__cold` — resolves and creates a complete multi-level dependency graph for the first time.
+- `get__deep_autowiring__stored` — returns the root service of an already resolved dependency graph.
 
 Conclusions:
 

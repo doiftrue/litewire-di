@@ -12,16 +12,18 @@ This report records the latest detailed performance measurements for LiteWire DI
 - Subjects: 8
 - Failures and errors: 0
 
-| Subject                   | Runs × Rounds | Memory peak |     Time | Variance |
-|---------------------------|--------------:|------------:|---------:|---------:|
-| `direct_instantiation`    |    10,000 × 5 |  666.744 KB | 0.078 μs |   ±2.36% |
-| `cold_get`                |    10,000 × 5 |   16.422 MB | 2.055 μs |   ±1.38% |
-| `stored_get`              |    10,000 × 5 |  666.720 KB | 0.060 μs |   ±2.35% |
-| `cold_reflection_make`    |    10,000 × 5 |   15.862 MB | 1.986 μs |   ±1.44% |
-| `cached_reflection_make`  |    10,000 × 5 |  666.744 KB | 0.799 μs |   ±1.57% |
-| `registered_factory_make` |    10,000 × 5 |  666.744 KB | 0.419 μs |   ±2.68% |
-| `cold_deep_autowiring`    |    10,000 × 5 |   18.467 MB | 2.932 μs |   ±0.86% |
-| `stored_deep_autowiring`  |    10,000 × 5 |  666.744 KB | 0.059 μs |   ±4.11% |
+| Subject                         | Runs × Rounds | Memory peak |     Time | Variance |
+|---------------------------------|--------------:|------------:|---------:|---------:|
+| `direct_instantiation`          |    10,000 × 5 |  666.744 KB | 0.078 μs |   ±2.36% |
+| `get__cold`                     |    10,000 × 5 |   16.422 MB | 2.055 μs |   ±1.38% |
+| `get__stored`                   |    10,000 × 5 |  666.720 KB | 0.060 μs |   ±2.35% |
+| `make__reflection__cold`        |    10,000 × 5 |   15.862 MB | 1.986 μs |   ±1.44% |
+| `make__reflection__cached`      |    10,000 × 5 |  666.744 KB | 0.799 μs |   ±1.57% |
+| `make__registered_factory`      |    10,000 × 5 |  666.744 KB | 0.419 μs |   ±2.68% |
+| `get__deep_autowiring__cold`    |    10,000 × 5 |   18.467 MB | 2.932 μs |   ±0.86% |
+| `get__deep_autowiring__stored`  |    10,000 × 5 |  666.744 KB | 0.059 μs |   ±4.11% |
+| `has__resolvable_class__cold`   |    10,000 × 5 |   11.356 MB | 2.232 μs |   ±2.92% |
+| `has__resolvable_class__stored` |    10,000 × 5 |  739.432 KB | 0.120 μs |   ±2.64% |
 
 ## Column legend
 
@@ -34,37 +36,30 @@ This report records the latest detailed performance measurements for LiteWire DI
 
 ## Subjects
 
-### `direct_instantiation`
+- **direct_instantiation** 
+   Creates `ClassWithDeps` and `SimpleClass` directly with `new`. This is the baseline without container work.
 
-Creates `ClassWithDeps` and `SimpleClass` directly with `new`. This is the baseline without container work.
+- **get__cold** 
+   Creates a new container and resolves `ClassWithDeps` for the first time. The measurement includes reflection, dependency discovery, object construction, and storage of the shared instance.
 
-### `cold_get`
+- **get__stored** 
+   Returns a previously resolved shared `ClassWithDeps` instance. This measures the container's stored-instance lookup path.
 
-Creates a new container and resolves `ClassWithDeps` for the first time. The measurement includes reflection, dependency discovery, object construction, and storage of the shared instance.
+- **make__reflection__cold** 
+   Creates a new container and calls `make()` before reflection metadata has been cached. The result is not stored as a shared service.
 
-### `stored_get`
+- **make__reflection__cached** 
+   Calls `make()` after the same container has already resolved the class once. This measures fresh object creation with cached reflection metadata.
 
-Returns a previously resolved shared `ClassWithDeps` instance. This measures the container's stored-instance lookup path.
+- **make__registered_factory** 
+   Creates `ClassWithDeps` through a registered closure factory. It measures factory invocation and container dispatch without reflection-based construction.
 
-### `cold_reflection_make`
+- **get__deep_autowiring__cold** 
+   Creates a new container and resolves the three-level `ClassDeepA → ClassDeepB → ClassDeepC` graph for the first time.
 
-Creates a new container and calls `make()` before reflection metadata has been cached. The result is not stored as a shared service.
+- **get__deep_autowiring__stored** 
+   Returns a previously resolved `ClassDeepA` graph. This measures lookup of an already stored top-level shared instance.
 
-### `cached_reflection_make`
-
-Calls `make()` after the same container has already resolved the class once. This measures fresh object creation with cached reflection metadata.
-
-### `registered_factory_make`
-
-Creates `ClassWithDeps` through a registered closure factory. It measures factory invocation and container dispatch without reflection-based construction.
-
-### `cold_deep_autowiring`
-
-Creates a new container and resolves the three-level `ClassDeepA → ClassDeepB → ClassDeepC` graph for the first time.
-
-### `stored_deep_autowiring`
-
-Returns a previously resolved `ClassDeepA` graph. This measures lookup of an already stored top-level shared instance.
 
 ## Run locally
 

@@ -30,10 +30,7 @@ final class ContainerBench {
 		$this->make_c->make( ClassWithDeps::class );
 
 		$this->factory_c = new Container();
-		$this->factory_c->set(
-			ClassWithDeps::class,
-			static fn() => new ClassWithDeps( new SimpleClass() )
-		);
+		$this->factory_c->set( ClassWithDeps::class, static fn() => new ClassWithDeps( new SimpleClass() ) );
 
 		$this->stored_deep_c = new Container();
 		$this->stored_deep_c->get( ClassDeepA::class );
@@ -45,38 +42,48 @@ final class ContainerBench {
 	}
 
 	/** @Subject */
-	public function cold_get(): object {
+	public function get__cold(): object {
 		return ( new Container() )->get( ClassWithDeps::class );
 	}
 
 	/** @Subject */
-	public function stored_get(): object {
+	public function get__stored(): object {
 		return $this->stored_c->get( ClassWithDeps::class );
 	}
 
 	/** @Subject */
-	public function cold_reflection_make(): object {
-		return ( new Container() )->make( ClassWithDeps::class );
-	}
-
-	/** @Subject */
-	public function cached_reflection_make(): object {
-		return $this->make_c->make( ClassWithDeps::class );
-	}
-
-	/** @Subject */
-	public function registered_factory_make(): object {
-		return $this->factory_c->make( ClassWithDeps::class );
-	}
-
-	/** @Subject */
-	public function cold_deep_autowiring(): object {
+	public function get__deep_autowiring__cold(): object {
 		return ( new Container() )->get( ClassDeepA::class );
 	}
 
 	/** @Subject */
-	public function stored_deep_autowiring(): object {
+	public function get__deep_autowiring__stored(): object {
 		return $this->stored_deep_c->get( ClassDeepA::class );
+	}
+
+	/** @Subject */
+	public function make__reflection__cold(): object {
+		return ( new Container() )->make( ClassWithDeps::class );
+	}
+
+	/** @Subject */
+	public function make__reflection__cached(): object {
+		return $this->make_c->make( ClassWithDeps::class );
+	}
+
+	/** @Subject */
+	public function make__registered_factory(): object {
+		return $this->factory_c->make( ClassWithDeps::class );
+	}
+
+	/** @Subject */
+	public function has__resolvable_class__cold(): bool {
+		return ( new Container() )->has( ClassWithDeps::class );
+	}
+
+	/** @Subject */
+	public function has__resolvable_class__stored(): bool {
+		return $this->stored_c->has( ClassWithDeps::class );
 	}
 
 }

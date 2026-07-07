@@ -36,7 +36,7 @@ jobs:
       - name: Install dependencies
         run: composer update --no-interaction --prefer-dist --no-progress
 
-      - name: Run PHPUnit
+      - name: ___ Run PHPUnit ___
         run: composer phpunit -- --colors=always
 
   static-analysis:
@@ -56,7 +56,7 @@ jobs:
       - name: Install dependencies
         run: composer update --no-interaction --prefer-dist --no-progress
 
-      - name: Run PHPStan
+      - name: ___ Run PHPStan ___
         run: composer phpstan -- --no-progress --memory-limit=1G
 
   coverage:
@@ -76,7 +76,7 @@ jobs:
       - name: Install dependencies
         run: composer update --no-interaction --prefer-dist --no-progress
 
-      - name: Generate coverage report
+      - name: ___ Report ___
         shell: bash
         run: |
           set -o pipefail

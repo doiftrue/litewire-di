@@ -81,7 +81,7 @@ Features
 
 Partially supported features:
 
-- Services can receive configuration through factories and runtime parameters, but the container does not have a separate configuration array.
+- Services can receive configuration through factories, runtime parameters, or a registered configuration object, but the container does not have a separate configuration array. See [Passing configuration to services](docs/config-usage-example.md).
 - Invokable objects can be wrapped in a closure, but objects with `__invoke()` are not treated as factories automatically.
 - The container uses normal PHP code for configuration. It does not provide attributes or a special configuration language.
 - CI generates a test coverage report for `Container.php`; the badge remains static.
@@ -94,15 +94,15 @@ Usage Guide
 LiteWire DI has four public methods:
 
 - `has()` checks if a service can be loaded.
-- `get()` returns a shared object (and create it if now exists).
 - `set()` tells the container how to create an object.
+- `get()` returns a shared object (and create it if now exists).
 - `make()` creates a new object.
 
 API:
 ```php
 $container->has( class-string $id ): bool;
-$container->get( class-string $id );
 $container->set( class-string $id, object|Closure|class-string $service ): void;
+$container->get( class-string $id );
 $container->make( class-string $id, array $parameters = [] );
 ```
 
@@ -151,7 +151,10 @@ add_action( 'plugins_loaded', function () use ( $container ) {
 } );
 ```
 
-See also: [Complex WordPress plugin example](docs/wordpress-plugin.md)
+More examples:
+
+- [Passing configuration to services](docs/config-usage-example.md)
+- [Complex WordPress plugin example](docs/wordpress-plugin.md)
 
 
 

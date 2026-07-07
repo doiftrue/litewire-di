@@ -60,12 +60,8 @@ Create `my-plugin.php`. This file loads the copied container and the plugin auto
  * Requires PHP: 7.4
  * Version: 1.0.0
  */
-
-use Example\MyPlugin\Logger\Logger;
-use Example\MyPlugin\Logger\WordPressLogger;
-use Example\MyPlugin\Plugin;
-use Example\MyPlugin\PluginConfig;
-use Kama\LiteWireDI\Container;
+ 
+namespace Example\MyPlugin;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -75,7 +71,7 @@ require_once __DIR__ . '/autoload.php';
 add_action( 'plugins_loaded', 'example_my_plugin_init' );
 
 function example_my_plugin_init(): void {
-	$container = new Container();
+	$container = new \Kama\LiteWireDI\Container();
 
 	// The container cannot guess which class should implement an interface.
 	$container->set( Logger::class, WordPressLogger::class );
@@ -104,15 +100,14 @@ Create `autoload.php`:
 
 ```php
 <?php
+namespace Example\MyPlugin;
 
 spl_autoload_register( static function ( string $class ): void {
-	$prefix = 'Example\\MyPlugin\\';
-
-	if ( strpos( $class, $prefix ) !== 0 ) {
+	if ( ! str_starts_with( $class, __NAMESPACE__ ) ) {
 		return;
 	}
 
-	$relative_class = substr( $class, strlen( $prefix ) );
+	$relative_class = substr( $class, strlen( __NAMESPACE__ ) );
 	$file = __DIR__ . '/src/' . str_replace( '\\', '/', $relative_class ) . '.php';
 
 	if ( is_file( $file ) ) {
@@ -292,6 +287,7 @@ Create `src/AdminNotice.php`:
 namespace Example\MyPlugin;
 
 final class AdminNotice {
+
 	private PluginConfig $config;
 
 	public function __construct( PluginConfig $config ) {
@@ -314,6 +310,7 @@ final class AdminNotice {
 		</div>
 		<?php
 	}
+	
 }
 ```
 
@@ -329,6 +326,7 @@ Create `src/Plugin.php`:
 namespace Example\MyPlugin;
 
 final class Plugin {
+
 	private SettingsPage $settings_page;
 	private AdminNotice $admin_notice;
 
@@ -344,6 +342,7 @@ final class Plugin {
 		$this->settings_page->register_hooks();
 		$this->admin_notice->register_hooks();
 	}
+	
 }
 ```
 

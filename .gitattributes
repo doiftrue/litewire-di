@@ -7,8 +7,10 @@
 /phpstan.neon         export-ignore
 /phpunit.coverage.xml export-ignore
 /phpunit.xml          export-ignore
+/index.html           export-ignore
 
 # Folders
+/vendor               export-ignore
 /benchmarks           export-ignore
 /docs                 export-ignore
 /tests                export-ignore

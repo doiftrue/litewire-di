@@ -9,6 +9,9 @@ LiteWire DI Container
 
 A tiny single-file autowire DI container for PHP and WordPress applications.
 
+See: https://doiftrue.github.io/litewire-di/
+
+
 Compatibility
 -------------
 
@@ -81,7 +84,7 @@ Features
 
 Partially supported features:
 
-- Services can receive configuration through factories, runtime parameters, or a registered configuration object, but the container does not have a separate configuration array. See [Passing configuration to services](docs/config-usage-example.md).
+- Services can receive configuration through factories, runtime parameters, or a registered configuration object, but the container does not have a separate configuration array. See [Passing configuration to services](DOC/config-usage-example.md).
 - Invokable objects can be wrapped in a closure, but objects with `__invoke()` are not treated as factories automatically.
 - The container uses normal PHP code for configuration. It does not provide attributes or a special configuration language.
 - CI generates a test coverage report for `Container.php`; the badge remains static.
@@ -153,8 +156,8 @@ add_action( 'plugins_loaded', function () use ( $container ) {
 
 More examples:
 
-- [Passing configuration to services](docs/config-usage-example.md)
-- [Complex WordPress plugin example](docs/wordpress-plugin.md)
+- [Passing configuration to services](DOC/config-usage-example.md)
+- [Complex WordPress plugin example](DOC/wordpress-plugin.md)
 
 
 

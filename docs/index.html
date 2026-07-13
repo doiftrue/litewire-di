@@ -1,160 +1,951 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="no-js">
 <head>
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<meta name="description" content="LiteWire DI is a tiny, single-file autowire dependency injection container for PHP and WordPress applications.">
 	<meta name="theme-color" content="#f4f1e8">
-	<title>LiteWire DI - Autowiring without the weight</title>
-	<link rel="stylesheet" href="./style.css">
+	<title>LiteWire DI — Autowiring without the weight</title>
+	<script>
+		document.documentElement.classList.replace( 'no-js', 'js' );
+		try {
+			const savedTheme = localStorage.getItem( 'litewire-theme' );
+			const theme = savedTheme || ( matchMedia( '(prefers-color-scheme: dark)' ).matches ? 'dark' : 'light' );
+			document.documentElement.dataset.theme = theme;
+		} catch ( error ) {}
+	</script>
+	<link rel="stylesheet" href="./assets/prism.css">
+	<link rel="stylesheet" href="./assets/style.css">
 </head>
 <body>
+<a class="skip-link" href="#main-content">Skip to content</a>
+
 <header class="site-header" id="site-header">
 	<nav class="nav wrap" aria-label="Primary navigation">
 		<a class="brand" href="#top" aria-label="LiteWire DI home">
 			<span class="logo" aria-hidden="true">LW</span>
 			<span>LiteWire DI</span>
 		</a>
-		<div class="nav-links">
-			<a href="#features">Features</a>
+		<div class="nav-links" id="primary-links">
 			<a href="#api">API</a>
-			<a class="button button-small" href="https://github.com/doiftrue/litewire-di" target="_blank" rel="noreferrer">GitHub ↗</a>
+			<a href="#documentation">Documentation</a>
+			<button class="theme-toggle" type="button" aria-label="Switch to dark theme" title="Switch theme">
+				<span class="theme-icon theme-icon-sun" aria-hidden="true">☀</span>
+				<span class="theme-icon theme-icon-moon" aria-hidden="true">☾</span>
+			</button>
+			<a class="button button-small" href="https://github.com/doiftrue/litewire-di" target="_blank" rel="noreferrer">GitHub <span aria-hidden="true">↗</span></a>
 		</div>
+		<button class="menu-button" type="button" aria-controls="primary-links" aria-expanded="false">
+			<span class="sr-only">Toggle navigation</span><span aria-hidden="true"></span>
+		</button>
 	</nav>
 </header>
 
-<main id="top">
-	<section class="hero">
-		<div class="hero-grid wrap">
-			<div class="reveal">
-				<p class="eyebrow">Tiny PHP dependency injection</p>
-				<h1>Wiring,<br><span class="h1-accent">without</span><br>the weight.</h1>
-				<p class="hero-copy">A single-file autowire DI container for PHP and WordPress. Four methods, zero runtime dependencies, no configuration ceremony.</p>
-				<div class="hero-actions">
-					<a class="button" href="https://github.com/doiftrue/litewire-di/blob/main/Container.php" target="_blank" rel="noreferrer">Get Container.php <span aria-hidden="true">↗</span></a>
-					<a class="button button-ghost" href="#api">See the API ↓</a>
-				</div>
-				<ul class="quick-facts">
-					<li>PHP 7.4 - 8.5</li>
-					<li>MIT licensed</li>
-					<li>PHPStan level 9</li>
-				</ul>
-			</div>
-
-			<div class="code-stage reveal">
-				<div class="code-window">
-					<div class="code-bar">
-						<div class="dots" aria-hidden="true"><i></i><i></i><i></i></div>
-						<span>your-plugin.php</span>
-						<span>PHP</span>
+<main id="main-content">
+	<section class="hero" id="top">
+		<div class="hero-inner wrap">
+			<div class="hero-grid">
+				<div class="hero-copy-block reveal">
+					<p class="hero-label">Lite PHP dependency injection</p>
+					<h1>Wiring, <span class="h1-accent">without</span> the weight.</h1>
+					<p class="hero-copy">A single-file autowire DI container for PHP and WordPress. Four methods, zero runtime dependencies, no configuration ceremony.</p>
+					<div class="hero-actions">
+						<a class="button" href="https://github.com/doiftrue/litewire-di/blob/main/Container.php" target="_blank" rel="noreferrer">Get Container.php <span aria-hidden="true">↗</span></a>
+						<a class="button button-ghost" href="#documentation">Read documentation <span aria-hidden="true">↓</span></a>
 					</div>
-					<pre><code><span class="k">use</span> <span class="t">Kama\LiteWireDI\Container</span>;
+					<ul class="quick-facts" aria-label="Project facts">
+						<li>PHP 7.4–8.5</li><li>MIT licensed</li><li>PHPStan level 9</li>
+					</ul>
+				</div>
 
-<span class="k">final class</span> <span class="t">Logger</span> {
-	<span class="k">public function</span> <span class="f">log</span>( <span class="t">string</span> <span class="v">$message</span> ): <span class="t">void</span> {
-		error_log( <span class="v">$message</span> );
+				<div class="code-stage reveal">
+					<div class="code-window">
+						<div class="code-bar">
+							<div class="dots" aria-hidden="true"><i></i><i></i><i></i></div>
+							<span>your-plugin.php</span><span>PHP</span>
+						</div>
+						<pre><code class="language-php">use Kama\LiteWireDI\Container;
+
+final class Logger {
+	public function log( string $message ): void {
+		error_log( $message );
 	}
 }
 
-<span class="k">final class</span> <span class="t">Service</span> {
-	<span class="k">public function</span> <span class="f">__construct</span>(
-		<span class="k">private</span> <span class="t">Logger</span> <span class="v">$logger</span>
+final class Service {
+	public function __construct(
+		private Logger $logger
 	) {}
 }
 
-<span class="v">$container</span> = <span class="k">new</span> <span class="t">Container</span>();
-
-<span class="c">// Logger is wired automatically.</span>
-<span class="v">$service</span> = <span class="v">$container</span>-&gt;<span class="f">get</span>( <span class="t">Service</span>::class );</code></pre>
+$container = new Container();
+$service = $container-&gt;get( Service::class );</code></pre>
+					</div>
 				</div>
+			</div>
+
+			<div class="hero-benefits reveal" aria-label="LiteWire DI at a glance">
+				<div><strong>Single</strong> <span>portable PHP file</span></div>
+				<div><strong>Autowiring</strong> <span>built in</span></div>
+				<div><strong>NO</strong> <span>runtime dependencies</span></div>
+				<div><strong>PSR-11</strong> <span>familiar API style</span></div>
 			</div>
 		</div>
 	</section>
 
-	<section class="section section-dark" id="features">
-		<div class="wrap">
-			<div class="section-heading reveal">
-				<div>
-					<p class="kicker">Small by design</p>
-					<h2>Keep the container out of your way.</h2>
-				</div>
-				<p class="section-intro">LiteWire DI is made for plugins, themes, libraries, and focused PHP apps where a framework-scale container is more machinery than value.</p>
-			</div>
-
-			<div class="stats reveal">
-				<div class="stat"><strong>1</strong><span>portable PHP file</span></div>
-				<div class="stat"><strong>0</strong><span>runtime dependencies</span></div>
-				<div class="stat"><strong>4</strong><span>public methods</span></div>
-				<div class="stat"><strong>9</strong><span>PHPStan level</span></div>
-			</div>
-
-			<div class="feature-list">
-				<article class="feature reveal">
-					<span class="feature-num">01</span>
-					<h3>Automatic wiring</h3>
-					<p>Constructor and factory dependencies resolve from their type declarations.</p>
-				</article>
-				<article class="feature reveal">
-					<span class="feature-num">02</span>
-					<h3>Shared or fresh</h3>
-					<p>Use get() for shared services and make() for a new root object with runtime values.</p>
-				</article>
-				<article class="feature reveal">
-					<span class="feature-num">03</span>
-					<h3>Strict object model</h3>
-					<p>Class and interface names are service IDs. No magic strings or mixed-value storage.</p>
-				</article>
-				<article class="feature reveal">
-					<span class="feature-num">04</span>
-					<h3>Factories included</h3>
-					<p>Register objects, class names, or closures. Factory dependencies are autowired too.</p>
-				</article>
-				<article class="feature reveal">
-					<span class="feature-num">05</span>
-					<h3>Useful failures</h3>
-					<p>Circular dependencies are detected and reported with the full resolution chain.</p>
-				</article>
-				<article class="feature reveal">
-					<span class="feature-num">06</span>
-					<h3>PSR-11-style API</h3>
-					<p>Familiar get() and has() methods without adding psr/container as a dependency.</p>
-				</article>
-			</div>
-		</div>
-	</section>
-
-	<section class="section" id="api">
+	<section class="api-section" id="api">
 		<div class="api-grid wrap">
 			<div class="api-copy reveal">
-				<p class="kicker">The whole API</p>
-				<h2>Four methods. That’s it.</h2>
+				<p class="section-label">The whole contract</p>
+				<h2>Four methods.<br>That’s it.</h2>
 				<p>Register a rule when you need one. Otherwise, ask for a class and let autowiring handle the graph.</p>
+				<aside class="api-callout"><strong>PSR-11 style</strong><span>Familiar <code>get()</code> and <code>has()</code>, without requiring <code>psr/container</code>.</span></aside>
 			</div>
 
-			<div class="reveal">
+			<div class="api-examples reveal">
 				<div class="api-tabs" role="tablist" aria-label="API examples">
 					<button class="api-tab" id="tab-get" type="button" role="tab" aria-selected="true" aria-controls="code-panel" data-example="get">get()</button>
 					<button class="api-tab" id="tab-set" type="button" role="tab" aria-selected="false" aria-controls="code-panel" data-example="set" tabindex="-1">set()</button>
 					<button class="api-tab" id="tab-make" type="button" role="tab" aria-selected="false" aria-controls="code-panel" data-example="make" tabindex="-1">make()</button>
 					<button class="api-tab" id="tab-has" type="button" role="tab" aria-selected="false" aria-controls="code-panel" data-example="has" tabindex="-1">has()</button>
 				</div>
-
 				<div class="example-code" id="code-panel" role="tabpanel" aria-labelledby="tab-get">
 					<div class="example-code-header">
 						<span id="example-title">Resolve a shared service</span>
 						<button class="copy-button" id="copy-button" type="button">Copy code</button>
 					</div>
-					<pre><code id="example-code"></code></pre>
+					<pre><code class="language-php" id="example-code"></code></pre>
+					<div class="example-footer"><span id="example-description">Returns and stores one shared object.</span><a id="example-link" href="#get">Read full reference →</a></div>
 				</div>
-				<p class="api-note"><strong>Note:</strong> LiteWire DI intentionally uses a PSR-11-style API but does not implement the PSR interface, keeping the package dependency-free.</p>
+				<noscript>
+					<div class="api-fallback" aria-label="Four-method API overview">
+						<a href="#get"><code>get()</code><span>Resolve and store a shared service.</span></a>
+						<a href="#set"><code>set()</code><span>Register an object, class, or factory.</span></a>
+						<a href="#make"><code>make()</code><span>Create a fresh root object.</span></a>
+						<a href="#has"><code>has()</code><span>Check whether a graph can be resolved.</span></a>
+					</div>
+				</noscript>
 			</div>
+		</div>
+	</section>
+
+	<section class="documentation" id="documentation" aria-labelledby="documentation-title">
+		<div class="docs-heading wrap">
+			<h2 id="documentation-title">Everything in one place.</h2>
+			<p>From the four-method contract to configuration patterns and a complete WordPress plugin structure.</p>
+		</div>
+
+		<div class="docs-layout wrap">
+			<article class="docs-article" id="docs-content">
+				<!-- Generated from README.md and docs/*.md by page/build-docs.mjs. -->
+				<!-- DOCS:START -->
+<section class="doc-source doc-overview" data-doc-source="README.md"><h2 id="litewire-di-container">LiteWire DI Container<a class="heading-anchor" href="#litewire-di-container" aria-label="Link to this section">#</a></h2>
+<p>A tiny single-file autowire DI container for PHP and WordPress applications.</p>
+<p>See: https://doiftrue.github.io/litewire-di/</p>
+<h3 id="compatibility">Compatibility<a class="heading-anchor" href="#compatibility" aria-label="Link to this section">#</a></h3>
+<p>LiteWire DI supports PHP 7.4 and every PHP 8 minor release from 8.0 through 8.5. Each supported version is tested by CI. Future PHP versions are added after compatibility has been verified.</p>
+<h3 id="design-goals">Design goals<a class="heading-anchor" href="#design-goals" aria-label="Link to this section">#</a></h3>
+<p>This container is intentionally small. It is designed for small projects, plugins, themes, and libraries where a full-featured container like Symfony DI or PHP-DI would be too much.</p>
+<p>It is not trying to replace Symfony DI, PHP-DI, Laravel Container, or other full-featured dependency injection containers. It is useful when you need simple autowiring without configuration files, compiled cache, service providers, tags, scopes, scalar parameter storage, or framework integration.</p>
+<p>The main idea is to provide a PSR-11-style API built around <code>get()</code> and <code>has()</code>:</p>
+<div class="code-block"><div class="code-label"><span>php</span><button class="copy-code" type="button">Copy</button></div><pre><code class="language-php">$container-&gt;get( Service::class );
+$container-&gt;has( Service::class );</code></pre></div>
+<p>For larger projects, this makes migration to a bigger container easier.</p>
+<p>The container does not implement <code>Psr\Container\ContainerInterface</code> and does not depend on <code>psr/container</code>.</p>
+<h3 id="features">Features<a class="heading-anchor" href="#features" aria-label="Link to this section">#</a></h3>
+<ul>
+<li>Keep the whole container in a single PHP file.</li>
+<li>Use no external dependencies.</li>
+<li>Register existing objects, classes, and closure factories with <code>set()</code>.</li>
+<li>Autowire registered and unregistered classes.</li>
+<li>Return shared service instances with <code>get()</code>.</li>
+<li>Create a new instance every time with <code>make()</code>.</li>
+<li>Pass named runtime parameters to <code>make()</code>.</li>
+<li>Check whether classes and interfaces can be resolved with <code>has()</code>.</li>
+<li>Use an object-first design with class and interface names as service IDs.</li>
+<li>Use default values for scalar constructor parameters.</li>
+<li>Use the modern Reflection API on PHP 8.</li>
+<li>Inject the container itself as a dependency.</li>
+<li>Cache Reflection data inside each container instance.</li>
+<li>Detect circular dependencies and show the full resolution chain.</li>
+<li>Include benchmarks, PHPDoc, and inline comments.</li>
+<li>Include Composer configuration for publishing the package on Packagist.</li>
+<li>Test the package with PHPUnit and PHPStan in CI.</li>
+<li>Use PHPStan at level 9.</li>
+</ul>
+<p>Partially supported features:</p>
+<ul>
+<li>Services can receive configuration through factories, runtime parameters, or a registered configuration object, but the container does not have a separate configuration array. See <a href="https://github.com/doiftrue/litewire-di/blob/main/DOC/config-usage-example.md" target="_blank" rel="noreferrer">Passing configuration to services</a>.</li>
+<li>Invokable objects can be wrapped in a closure, but objects with <code>__invoke()</code> are not treated as factories automatically.</li>
+<li>The container uses normal PHP code for configuration. It does not provide attributes or a special configuration language.</li>
+<li>CI generates a test coverage report for <code>Container.php</code>; the badge remains static.</li>
+<li>The package is ready for Packagist, but publishing it is a separate manual step.</li>
+</ul>
+<h3 id="usage-guide">Usage Guide<a class="heading-anchor" href="#usage-guide" aria-label="Link to this section">#</a></h3>
+<p>LiteWire DI has four public methods:</p>
+<ul>
+<li><code>has()</code> checks if a service can be loaded.</li>
+<li><code>set()</code> tells the container how to create an object.</li>
+<li><code>get()</code> returns a shared object (and create it if now exists).</li>
+<li><code>make()</code> creates a new object.</li>
+</ul>
+<p>API:</p>
+<div class="code-block"><div class="code-label"><span>php</span><button class="copy-code" type="button">Copy</button></div><pre><code class="language-php">$container-&gt;has( class-string $id ): bool;
+$container-&gt;set( class-string $id, object|Closure|class-string $service ): void;
+$container-&gt;get( class-string $id );
+$container-&gt;make( class-string $id, array $parameters = [] );</code></pre></div>
+<p>All service IDs must be real class or interface names. Plain names such as <code>logger</code> are not supported.</p>
+<h3 id="basic-usage">Basic usage<a class="heading-anchor" href="#basic-usage" aria-label="Link to this section">#</a></h3>
+<p><code>Logger</code> will be created automatically because it is declared as a constructor dependency.</p>
+<div class="code-block"><div class="code-label"><span>php</span><button class="copy-code" type="button">Copy</button></div><pre><code class="language-php">class Logger {
+	public function log( string $message ): void {
+		error_log( $message );
+	}
+}
+
+class Service {
+	public function __construct(
+		private Logger $logger
+	) {}
+
+	public function run(): void {
+		$this-&gt;logger-&gt;log( 'Service started.' );
+	}
+}
+
+$container = new Container();
+$service = $container-&gt;get( Service::class );
+$service-&gt;run();</code></pre></div>
+<p>WordPress example:</p>
+<div class="code-block"><div class="code-label"><span>php</span><button class="copy-code" type="button">Copy</button></div><pre><code class="language-php">$container = new Container();
+
+// Register factory for Plugin class
+$container-&gt;set( Plugin::class, function () {
+	return new Plugin( __FILE__ );
+} );
+
+add_action( 'plugins_loaded', function () use ( $container ) {
+	$container-&gt;get( Plugin::class )-&gt;init();
+} );</code></pre></div>
+<p>More examples:</p>
+<ul>
+<li><a href="https://github.com/doiftrue/litewire-di/blob/main/DOC/config-usage-example.md" target="_blank" rel="noreferrer">Passing configuration to services</a></li>
+<li><a href="https://github.com/doiftrue/litewire-di/blob/main/DOC/wordpress-plugin.md" target="_blank" rel="noreferrer">Complex WordPress plugin example</a></li>
+</ul>
+<h3 id="has">has()<a class="heading-anchor" href="#has" aria-label="Link to this section">#</a></h3>
+<p>Checks whether the service was registered, already resolved, or can be autowired.</p>
+<p>For an unregistered class, its constructor and complete dependency graph must be valid.</p>
+<p>Usage:</p>
+<div class="code-block"><div class="code-label"><span>php</span><button class="copy-code" type="button">Copy</button></div><pre><code class="language-php">$container-&gt;has( Service::class ); // true if registered, resolved, or autowireable
+$container-&gt;has( 'Unknown' );      // false</code></pre></div>
+<h3 id="get">get()<a class="heading-anchor" href="#get" aria-label="Link to this section">#</a></h3>
+<p>Gets a shared service instance – singleton.</p>
+<p>If the service was already created, the same object is returned.</p>
+<h4 id="get-autowiring">get() – Autowiring<a class="heading-anchor" href="#get-autowiring" aria-label="Link to this section">#</a></h4>
+<p>See basic usage above.</p>
+<h4 id="get-shared-services">get() – Shared services<a class="heading-anchor" href="#get-shared-services" aria-label="Link to this section">#</a></h4>
+<p><code>get()</code> resolves a service and stores it in the container. The next call returns the same instance.</p>
+<div class="code-block"><div class="code-label"><span>php</span><button class="copy-code" type="button">Copy</button></div><pre><code class="language-php">$a = $container-&gt;get( Some_Service::class );
+$b = $container-&gt;get( Some_Service::class );
+
+var_dump( $a === $b ); // true</code></pre></div>
+<h4 id="get-scalar-values">get() – Scalar values<a class="heading-anchor" href="#get-scalar-values" aria-label="Link to this section">#</a></h4>
+<p>Required scalar values cannot be resolved automatically – <code>ContainerException</code> will be thrown.</p>
+<div class="code-block"><div class="code-label"><span>php</span><button class="copy-code" type="button">Copy</button></div><pre><code class="language-php">final class Config {
+	public function __construct(
+		private string $path
+	) {}
+}
+
+$container-&gt;get( Config::class ); // ContainerException</code></pre></div>
+<p>Use <code>make()</code> with named parameters:</p>
+<div class="code-block"><div class="code-label"><span>php</span><button class="copy-code" type="button">Copy</button></div><pre><code class="language-php">$config = $container-&gt;make( Config::class, [
+	'path' =&gt; __DIR__ . '/config.php',
+] );</code></pre></div>
+<p>Optional scalar values are supported:</p>
+<div class="code-block"><div class="code-label"><span>php</span><button class="copy-code" type="button">Copy</button></div><pre><code class="language-php">final class Config {
+	public function __construct(
+		private string $path = 'config.php'
+	) {}
+}
+
+$config = $container-&gt;get( Config::class ); // no error</code></pre></div>
+<h3 id="set">set()<a class="heading-anchor" href="#set" aria-label="Link to this section">#</a></h3>
+<p>Registers a service definition.</p>
+<p>Service IDs must be existing class/interface name – regular string isn’t supported:</p>
+<div class="code-block"><div class="code-label"><span>php</span><button class="copy-code" type="button">Copy</button></div><pre><code class="language-php">$container-&gt;set( Logger_Interface::class, File_Logger::class ); // valid
+$container-&gt;set( 'logger', File_Logger::class );                // InvalidArgumentException</code></pre></div>
+<p>Accepted values:</p>
+<ul>
+<li>existing object - <code>new MyClass()</code></li>
+<li>existing class name - <code>MyClass::class</code></li>
+<li>closure factory - <code>static fn () =&gt; new MyClass()</code></li>
+</ul>
+<aside class="callout important"><strong>Important</strong><p>Configure the container before the first call to <code>get()</code>. Replacing a definition with <code>set()</code> removes the stored instance for that ID, but does not rebuild other shared services that were already created with the previous instance as a dependency.</p></aside>
+<h4 id="set-register-an-existing-object">set() – Register an existing object<a class="heading-anchor" href="#set-register-an-existing-object" aria-label="Link to this section">#</a></h4>
+<div class="code-block"><div class="code-label"><span>php</span><button class="copy-code" type="button">Copy</button></div><pre><code class="language-php">$container-&gt;set( Logger::class, $logger );
+$service = $container-&gt;get( Service::class );</code></pre></div>
+<h4 id="set-register-an-interface-implementation">set() – Register an interface implementation<a class="heading-anchor" href="#set-register-an-interface-implementation" aria-label="Link to this section">#</a></h4>
+<div class="code-block"><div class="code-label"><span>php</span><button class="copy-code" type="button">Copy</button></div><pre><code class="language-php">$container-&gt;set( Logger_Interface::class, File_Logger::class );
+$logger = $container-&gt;get( Logger_Interface::class );</code></pre></div>
+<h4 id="set-register-a-factory">set() – Register a factory<a class="heading-anchor" href="#set-register-a-factory" aria-label="Link to this section">#</a></h4>
+<p>Factories must return an object.</p>
+<div class="code-block"><div class="code-label"><span>php</span><button class="copy-code" type="button">Copy</button></div><pre><code class="language-php">$container-&gt;set( Client::class, static function () {
+	return new Client( 'https://example.com' );
+} );
+
+$client = $container-&gt;get( Client::class );</code></pre></div>
+<h4 id="set-factory-autowiring">set() – Factory autowiring<a class="heading-anchor" href="#set-factory-autowiring" aria-label="Link to this section">#</a></h4>
+<p>Factory parameters are autowired for both <code>get()</code> and <code>make()</code>:</p>
+<div class="code-block"><div class="code-label"><span>php</span><button class="copy-code" type="button">Copy</button></div><pre><code class="language-php">$container-&gt;set( Mailer::class, static function ( Logger $logger ) {
+	return new Mailer( $logger );
+} );
+
+$shared_mailer = $container-&gt;get( Mailer::class );
+$fresh_mailer = $container-&gt;make( Mailer::class );</code></pre></div>
+<p>Type-hint <code>Container</code> in factory parameters to receive the container for factory:</p>
+<div class="code-block"><div class="code-label"><span>php</span><button class="copy-code" type="button">Copy</button></div><pre><code class="language-php">$container-&gt;set( Plugin::class, static function ( Container $container ) {
+	return new Plugin( $container-&gt;get( Config::class ) );
+} );
+
+$plugin = $container-&gt;get( Plugin::class );</code></pre></div>
+<h3 id="make">make()<a class="heading-anchor" href="#make" aria-label="Link to this section">#</a></h3>
+<p>Creates a fresh object each time from a registered definition or class name.</p>
+<p>Unlike <code>get()</code>, it does not store (caches) the created object in the container.</p>
+<aside class="callout note"><strong>Note</strong><p>Definitions registered as existing object instances cannot be used with <code>make()</code> - use <code>get()</code> to retrieve those instances.</p></aside>
+<aside class="callout note"><strong>Note</strong><p>Only the requested root object is created anew. Missing class dependencies are resolved through <code>get()</code>, so those dependencies are shared and reused by subsequent calls.</p></aside>
+<aside class="callout note"><strong>Note</strong><p>Class-string definitions are instantiated again, and closure factories are invoked on every call.</p></aside>
+<aside class="callout note"><strong>Note</strong><p>Factories must return an object but are responsible for whether that object is a new instance.</p></aside>
+<h4 id="make-new-instances">make() - New instances<a class="heading-anchor" href="#make-new-instances" aria-label="Link to this section">#</a></h4>
+<p><code>make()</code> creates a new object and does not save it in the container.</p>
+<div class="code-block"><div class="code-label"><span>php</span><button class="copy-code" type="button">Copy</button></div><pre><code class="language-php">$a = $container-&gt;make( Some_Service::class );
+$b = $container-&gt;make( Some_Service::class );
+
+var_dump( $a === $b ); // false</code></pre></div>
+<p>This is useful for stateful objects, DTOs, handlers, commands, forms, and other short-lived objects.</p>
+<h4 id="make-runtime-parameters">make() - Runtime parameters<a class="heading-anchor" href="#make-runtime-parameters" aria-label="Link to this section">#</a></h4>
+<p>The second argument of <code>make()</code> is an array of constructor parameters, keyed by parameter name. Values provided in this array are passed directly to the constructor. Any missing class dependencies are resolved automatically by the container.</p>
+<p>If the array contains a parameter name that does not exist in the constructor, <code>make()</code> throws a <code>ContainerException</code>.</p>
+<p>This allows <code>make()</code> to be used as a factory for objects that combine autowired services with runtime values. The factory call can then be replaced with a mock in tests.</p>
+<div class="code-block"><div class="code-label"><span>php</span><button class="copy-code" type="button">Copy</button></div><pre><code class="language-php">class Mailer {
+	public function __construct(
+		private Logger $logger,
+		private string $from
+	) {}
+}
+
+$mailer = $container-&gt;make( Mailer::class, [
+	'from' =&gt; 'admin@example.com',
+] );</code></pre></div>
+<h3 id="benchmarks">Benchmarks<a class="heading-anchor" href="#benchmarks" aria-label="Link to this section">#</a></h3>
+<p>Performance benchmarks cover direct instantiation, cold and stored <code>get()</code>, cold and reflection-cached <code>make()</code>, factory invocation, and both cold and stored deep autowiring.</p>
+<p>Benchmark results depend on the machine and PHP version. Compare changes in the same environment rather than treating individual timings as universal limits.</p>
+<p>Results for PHP 8.5.5 (with OPcache enabled):</p>
+<div class="table-wrap"><table><thead><tr><th>Subject</th><th>Runs × Rounds</th><th>Mem Peak</th><th>Time (Variance)</th></tr></thead><tbody><tr><td>direct_instantiation</td><td>10 000 × 5</td><td>678.904kb</td><td>0.078μs (±5.48%)</td></tr><tr><td>get__cold</td><td>10 000 × 5</td><td>16.449mb</td><td>2.027μs (±0.65%)</td></tr><tr><td>get__stored</td><td>10 000 × 5</td><td>678.880kb</td><td>0.058μs (±4.47%)</td></tr><tr><td>get__deep_autowiring__cold</td><td>10 000 × 5</td><td>18.494mb</td><td>2.895μs (±0.32%)</td></tr><tr><td>get__deep_autowiring__stored</td><td>10 000 × 5</td><td>666.744kb</td><td>0.059μs (±4.00%)</td></tr><tr><td>make__reflection__cold</td><td>10 000 × 5</td><td>15.889mb</td><td>2.016μs (±1.19%)</td></tr><tr><td>make__reflection__cached</td><td>10 000 × 5</td><td>678.904kb</td><td>0.804μs (±3.53%)</td></tr><tr><td>make__registered_factory</td><td>10 000 × 5</td><td>678.904kb</td><td>0.416μs (±6.95%)</td></tr></tbody></table></div>
+<p>Legend:</p>
+<ul>
+<li><strong>Subject</strong> — the operation measured by PHPBench.</li>
+<li><strong>Runs</strong> — time benchmark method executed per round.</li>
+<li><strong>Rounds</strong> — how many times the complete benchmark is repeated.</li>
+<li><strong>Time</strong> — modal execution time per run (1 μs = 0.001 ms).</li>
+<li><strong>Variance</strong> — how much execution time differs between rounds.</li>
+<li><strong>Mem Peak</strong> — peak memory usage of the entire benchmark process.</li>
+</ul>
+<p>Conclusions:</p>
+<p>Unlike larger containers such as PHP-DI, LiteWire DI does not keep a compiled container between requests. According to this benchmark, it would save only about 0.121 ms for 100 objects or 1.21 ms for 1,000. For small applications, this is usually too little to justify compilation, cache files, and cache invalidation.</p>
+<p>A compiled container may still help large applications with thousands of services. LiteWire DI instead favors simpler setup and predictable runtime behavior for smaller dependency graphs.</p>
+<ul>
+<li>Reflection caching makes <code>make()</code> about 2.5× faster.</li>
+<li>A registered factory is about 1.8× faster than cached reflection.</li>
+<li>Deep autowiring costs 2.744 μs initially, then 0.061 μs for stored results.</li>
+</ul>
+<p>See: <a href="https://github.com/doiftrue/litewire-di/blob/main/benchmarks/README.md" target="_blank" rel="noreferrer">Detailed benchmark results</a></p>
+<h3 id="comparison-with-other-containers">Comparison with other containers<a class="heading-anchor" href="#comparison-with-other-containers" aria-label="Link to this section">#</a></h3>
+<div class="table-wrap"><table><thead><tr><th>Container</th><th>Deps</th><th>PSR-11</th><th>Autowiring</th><th>Shared services</th><th>New instance method</th><th>Scalars</th><th>Config</th></tr></thead><tbody><tr><td>LiteWire DI</td><td>no</td><td>style</td><td>yes</td><td><code>get()</code></td><td><code>make()</code></td><td>runtime</td><td>no</td></tr><tr><td>PHP-DI</td><td>yes</td><td>yes</td><td>yes</td><td><code>get()</code></td><td><code>make()</code></td><td>yes</td><td>yes</td></tr><tr><td>Symfony DI</td><td>yes</td><td>yes</td><td>yes</td><td><code>get()</code></td><td>factories/services</td><td>yes</td><td>yes</td></tr><tr><td>Laravel Container</td><td>yes</td><td>partly/yes</td><td>yes</td><td><code>singleton(), instance()</code></td><td><code>make()</code></td><td>yes</td><td>yes</td></tr><tr><td>Laminas ServiceManager</td><td>yes</td><td>yes</td><td>yes</td><td>shared services</td><td><code>build()</code></td><td>yes</td><td>yes</td></tr><tr><td>League Container</td><td>yes</td><td>yes</td><td>yes</td><td><code>addShared()</code></td><td>definitions/factories</td><td>yes</td><td>yes</td></tr><tr><td>Yii DI Container</td><td>yes</td><td>no</td><td>yes</td><td><code>setSingleton()</code></td><td><code>get()</code></td><td>yes</td><td>yes</td></tr><tr><td>Pimple</td><td>yes</td><td>no</td><td>no</td><td>default behavior</td><td><code>factory()</code></td><td>yes</td><td>yes</td></tr><tr><td>Nette DI</td><td>yes</td><td>no/adapter</td><td>yes</td><td>generated services</td><td>generated factories</td><td>yes</td><td>yes</td></tr></tbody></table></div>
+<p>Best for:</p>
+<ul>
+<li><code>LiteWire DI</code> – simple PHP apps, WP plugins</li>
+<li><code>PHP-DI</code> – medium and large apps</li>
+<li><code>Symfony DI</code> – Symfony apps, compiled container</li>
+<li><code>Laravel Container</code> – Laravel apps</li>
+<li><code>Laminas ServiceManager</code> – Laminas/Mezzio apps</li>
+<li><code>Pimple</code> – small explicit service containers</li>
+<li><code>League Container</code> – framework-agnostic DI</li>
+<li><code>Yii DI Container</code> – Yii apps</li>
+<li><code>Nette DI</code> – Nette apps</li>
+</ul>
+<h3 id="limitations">Limitations<a class="heading-anchor" href="#limitations" aria-label="Link to this section">#</a></h3>
+<p>LiteWire DI intentionally does not include:</p>
+<ul>
+<li>A compiled container.</li>
+<li>Complex configuration files.</li>
+<li>Attributes or a special configuration language (DSL).</li>
+<li>A debug mode.</li>
+<li>Arbitrary string service IDs.</li>
+<li>Invokable objects used directly as factories.</li>
+<li>Service definitions passed through the container constructor.</li>
+<li>Service providers.</li>
+<li>Scopes.</li>
+<li>Tags.</li>
+<li>Scalar parameter storage.</li>
+<li>Union or intersection type resolution.</li>
+<li>Variadic parameter resolution.</li>
+</ul>
+<p>Required scalar constructor parameters must be provided manually.</p>
+<p>These features would make the public API larger and less focused. The main advantage of LiteWire DI is its strict object model in one small PHP file.</p>
+<p>Full PSR-11 support is also a tradeoff because it requires a dependency on <code>psr/container</code>. LiteWire DI keeps a PSR-11-style API instead. A separate optional adapter may be added in the future.</p>
+<p>The main next tasks are to make <code>has()</code> fully correct, publish real test coverage, and test every supported PHP version.</p>
+<h3 id="inspired-by">Inspired by<a class="heading-anchor" href="#inspired-by" aria-label="Link to this section">#</a></h3>
+<p>Inspired by <a href="https://github.com/renakdup/simple-dic" target="_blank" rel="noreferrer">Simple DIC</a></p>
+<p>LiteWire DI keeps the same single-file, dependency-free approach, but uses a stricter, object-only service model:</p>
+<ol>
+<li>Service IDs must be existing class or interface names. Arbitrary string keys are rejected.</li>
+<li>The container stores only objects other values and arrays cannot be registered.</li>
+<li><code>make()</code> accepts named runtime parameters for constructors and factories.</li>
+<li><code>make()</code> respects registered class and factory definitions instead of resolving only the class passed as its ID.</li>
+<li><code>has()</code> reports existing concrete classes that can be autowired without prior registration.</li>
+<li>Factory parameters are resolved in the same way as constructor parameters in both <code>get()</code> and <code>make()</code>.</li>
+<li>Generic PHPDoc preserves the concrete return type of <code>get()</code> and <code>make()</code> for IDEs and static analysis.</li>
+<li>A factory may request the container, other services, default values, and runtime values.</li>
+<li>Factory results are validated: returning a primitive, array, or <code>null</code> throws a <code>ContainerException</code>.</li>
+<li>Circular dependencies are detected and reported with the resolution chain.</li>
+<li>Invalid or unsupported definitions and parameters fail with explicit exceptions.</li>
+</ol></section>
+<section class="doc-source doc-guide" data-doc-source="DOC/config-usage-example.md"><header class="guide-header"><p class="section-label">Extended guide</p><h2 id="configuration">Configuration<a class="heading-anchor" href="#configuration" aria-label="Link to this guide">#</a></h2><a class="source-link" href="https://github.com/doiftrue/litewire-di/blob/main/DOC/config-usage-example.md" target="_blank" rel="noreferrer">View Markdown source ↗</a></header><p>Configuration is a set of values that changes how an application works without changing its code.</p>
+<p>Configuration helps to:</p>
+<ul>
+<li>keep changeable settings separate from application logic;</li>
+<li>use different values in production, development, and tests;</li>
+<li>avoid global variables and direct <code>getenv()</code> calls inside services.</li>
+</ul>
+<p>Each container handles configuration differently. The examples below show the usual approach for each container.</p>
+<p>ALl examples use PHP 8.2 syntax.</p>
+<h3 id="service-used-in-all-examples">Service used in all examples<a class="heading-anchor" href="#service-used-in-all-examples" aria-label="Link to this section">#</a></h3>
+<p>All examples below will create the same service:</p>
+<div class="code-block"><div class="code-label"><span>php</span><button class="copy-code" type="button">Copy</button></div><pre><code class="language-php">final class SomeService {
+	public function __construct(
+		private readonly string $db_host,
+		private readonly int $db_port,
+		private readonly string $db_name,
+		private readonly string $api_url,
+		private readonly int $api_timeout,
+		private readonly string $cache_dir,
+		private readonly bool $debug,
+	) {}
+}</code></pre></div>
+<h3 id="litewire-di">LiteWire DI<a class="heading-anchor" href="#litewire-di" aria-label="Link to this section">#</a></h3>
+<p>LiteWire DI can only store objects (not individual config values). Therefore, <code>config.php</code> creates and returns a small config object:</p>
+<p>file: <code>config.php</code></p>
+<div class="code-block"><div class="code-label"><span>php</span><button class="copy-code" type="button">Copy</button></div><pre><code class="language-php">final readonly class AppConfig {
+	public function __construct(
+		public string $db_host,
+		public int $db_port,
+		public string $db_name,
+		public string $api_url,
+		public int $api_timeout,
+		public string $cache_dir,
+		public bool $debug,
+	) {}
+}
+
+return new AppConfig(
+	db_host: 'localhost',
+	db_port: 3306,
+	db_name: 'my_application',
+	api_url: 'https://api.example.com',
+	api_timeout: 10,
+	cache_dir: __DIR__ . '/var/cache',
+	debug: true,
+);</code></pre></div>
+<p>The bootstrap file registers the configuration object. A factory takes <code>AppConfig</code> and passes its values to <code>SomeService</code>:</p>
+<p>file: <code>bootstrap.php</code></p>
+<div class="code-block"><div class="code-label"><span>php</span><button class="copy-code" type="button">Copy</button></div><pre><code class="language-php">$container = new Container();
+$config = require __DIR__ . '/config.php';
+
+$container-&gt;set( AppConfig::class, $config );
+$container-&gt;set( SomeService::class, static function ( AppConfig $config ) {
+	return new SomeService(
+		db_host: $config-&gt;db_host,
+		db_port: $config-&gt;db_port,
+		db_name: $config-&gt;db_name,
+		api_url: $config-&gt;api_url,
+		api_timeout: $config-&gt;api_timeout,
+		cache_dir: $config-&gt;cache_dir,
+		debug: $config-&gt;debug,
+	);
+} );
+
+$some_service = $container-&gt;get( SomeService::class );</code></pre></div>
+<aside class="callout info"><strong>Info</strong><p><code>AppConfig</code> contains values but no application logic. It is <code>readonly</code>, so services cannot accidentally change the settings after startup. The class and its values are both visible in one file.</p></aside>
+<h3 id="php-di">PHP-DI<a class="heading-anchor" href="#php-di" aria-label="Link to this section">#</a></h3>
+<p>PHP-DI can store values under string IDs such as <code>database.host</code> and <code>app.debug</code>. It can pass those values directly to the service constructor.</p>
+<p>The PHP-DI definition file contains both the values and instructions that connect each value to a constructor argument:</p>
+<p>file: <code>config.php</code></p>
+<div class="code-block"><div class="code-label"><span>php</span><button class="copy-code" type="button">Copy</button></div><pre><code class="language-php">use function DI\autowire;
+use function DI\get;
+
+return [
+	'database.host' =&gt; 'localhost',
+	'database.port' =&gt; 3306,
+	'database.name' =&gt; 'my_application',
+	'api.url' =&gt; 'https://api.example.com',
+	'api.timeout' =&gt; 10,
+	'cache.directory' =&gt; __DIR__ . '/var/cache',
+	'app.debug' =&gt; true,
+
+	SomeService::class =&gt; autowire()
+		-&gt;constructorParameter( 'db_host', get( 'database.host' ) )
+		-&gt;constructorParameter( 'db_port', get( 'database.port' ) )
+		-&gt;constructorParameter( 'db_name', get( 'database.name' ) )
+		-&gt;constructorParameter( 'api_url', get( 'api.url' ) )
+		-&gt;constructorParameter( 'api_timeout', get( 'api.timeout' ) )
+		-&gt;constructorParameter( 'cache_dir', get( 'cache.directory' ) )
+		-&gt;constructorParameter( 'debug', get( 'app.debug' ) ),
+];</code></pre></div>
+<p>file: <code>bootstrap.php</code></p>
+<div class="code-block"><div class="code-label"><span>php</span><button class="copy-code" type="button">Copy</button></div><pre><code class="language-php">$builder = new DI\ContainerBuilder();
+$builder-&gt;addDefinitions( __DIR__ . '/config.php' );
+$container = $builder-&gt;build();
+
+$some_service = $container-&gt;get( SomeService::class );</code></pre></div>
+<p>PHP-DI resolves every <code>get()</code> reference and passes the corresponding value to <code>SomeService</code>. The container owns both the scalar values and the rules for injecting them.</p>
+<h3 id="symfony-di">Symfony DI<a class="heading-anchor" href="#symfony-di" aria-label="Link to this section">#</a></h3>
+<p>Symfony stores scalar values as container parameters. A service can reference those parameters in <code>services.yaml</code>:</p>
+<p>file: <code>config/services.yaml</code></p>
+<div class="code-block"><div class="code-label"><span>yaml</span><button class="copy-code" type="button">Copy</button></div><pre><code class="language-yaml">parameters:
+    database.host: 'localhost'
+    database.port: 3306
+    database.name: 'my_application'
+    api.url: 'https://api.example.com'
+    api.timeout: 10
+    cache.directory: '%kernel.project_dir%/var/cache'
+    app.debug: true
+
+services:
+    SomeService:
+        public: true
+        arguments:
+            $db_host: '%database.host%'
+            $db_port: '%database.port%'
+            $db_name: '%database.name%'
+            $api_url: '%api.url%'
+            $api_timeout: '%api.timeout%'
+            $cache_dir: '%cache.directory%'
+            $debug: '%app.debug%'</code></pre></div>
+<p>file: <code>bootstrap.php</code></p>
+<div class="code-block"><div class="code-label"><span>php</span><button class="copy-code" type="button">Copy</button></div><pre><code class="language-php">use Symfony\Component\Config\FileLocator;
+use Symfony\Component\DependencyInjection\ContainerBuilder;
+use Symfony\Component\DependencyInjection\Loader\YamlFileLoader;
+
+$container = new ContainerBuilder();
+$container-&gt;setParameter( 'kernel.project_dir', __DIR__ );
+
+$loader = new YamlFileLoader(
+	$container,
+	new FileLocator( __DIR__ . '/config' )
+);
+$loader-&gt;load( 'services.yaml' );
+
+$container-&gt;compile();
+
+$some_service = $container-&gt;get( SomeService::class );</code></pre></div>
+<aside class="callout info"><strong>Info</strong><p>The bootstrap code creates the container, loads <code>services.yaml</code>, and compiles all definitions.  Symfony resolves every <code>%parameter%</code> reference while compiling the container.  <code>public: true</code> is used only so this small example can call <code>get()</code> directly. Application services are normally private and injected into other services.</p></aside>
+<h3 id="laravel-container">Laravel Container<a class="heading-anchor" href="#laravel-container" aria-label="Link to this section">#</a></h3>
+<p>Laravel stores application settings in files inside the <code>config</code> directory:</p>
+<p>file: <code>config/some_service.php</code></p>
+<div class="code-block"><div class="code-label"><span>php</span><button class="copy-code" type="button">Copy</button></div><pre><code class="language-php">return [
+	'db_host' =&gt; 'localhost',
+	'db_port' =&gt; 3306,
+	'db_name' =&gt; 'my_application',
+	'api_url' =&gt; 'https://api.example.com',
+	'api_timeout' =&gt; 10,
+	'cache_dir' =&gt; storage_path( 'framework/cache' ),
+	'debug' =&gt; true,
+];</code></pre></div>
+<p>A service provider uses contextual binding to connect each constructor argument to a configuration value:</p>
+<p>file: <code>app/Providers/SomeServiceProvider.php</code></p>
+<div class="code-block"><div class="code-label"><span>php</span><button class="copy-code" type="button">Copy</button></div><pre><code class="language-php">use Illuminate\Support\ServiceProvider;
+
+final class SomeServiceProvider extends ServiceProvider {
+	public function register(): void {
+		$this-&gt;app-&gt;when( SomeService::class )
+			-&gt;needs( '$db_host' )
+			-&gt;giveConfig( 'some_service.db_host' );
+
+		$this-&gt;app-&gt;when( SomeService::class )
+			-&gt;needs( '$db_port' )
+			-&gt;giveConfig( 'some_service.db_port' );
+
+		$this-&gt;app-&gt;when( SomeService::class )
+			-&gt;needs( '$db_name' )
+			-&gt;giveConfig( 'some_service.db_name' );
+
+		$this-&gt;app-&gt;when( SomeService::class )
+			-&gt;needs( '$api_url' )
+			-&gt;giveConfig( 'some_service.api_url' );
+
+		$this-&gt;app-&gt;when( SomeService::class )
+			-&gt;needs( '$api_timeout' )
+			-&gt;giveConfig( 'some_service.api_timeout' );
+
+		$this-&gt;app-&gt;when( SomeService::class )
+			-&gt;needs( '$cache_dir' )
+			-&gt;giveConfig( 'some_service.cache_dir' );
+
+		$this-&gt;app-&gt;when( SomeService::class )
+			-&gt;needs( '$debug' )
+			-&gt;giveConfig( 'some_service.debug' );
+	}
+}</code></pre></div>
+<p>The bootstrap code creates the application container, loads the configuration, and registers the provider:</p>
+<p>file: <code>bootstrap.php</code></p>
+<div class="code-block"><div class="code-label"><span>php</span><button class="copy-code" type="button">Copy</button></div><pre><code class="language-php">use Illuminate\Config\Repository;
+use Illuminate\Foundation\Application;
+
+$app = new Application( __DIR__ );
+
+$app-&gt;instance( 'config', new Repository( [
+	'some_service' =&gt; require __DIR__ . '/config/some_service.php',
+] ) );
+
+$app-&gt;register( SomeServiceProvider::class );
+
+$some_service = $app-&gt;make( SomeService::class );</code></pre></div>
+<p><code>$app-&gt;register()</code> creates the provider and calls its <code>register()</code> method. Laravel then reads the configured values and injects them when <code>$app-&gt;make()</code> resolves <code>SomeService</code>.</p>
+<h3 id="are-these-approaches-equivalent">Are these approaches equivalent?<a class="heading-anchor" href="#are-these-approaches-equivalent" aria-label="Link to this section">#</a></h3>
+<p>They create the same <code>SomeService</code> with the same settings. PHP-DI stores individual values and injects them directly. LiteWire DI stores one <code>AppConfig</code> object and uses a factory to pass its values to the service.</p>
+<p>The container features are also not equivalent. PHP-DI stores scalar entries and can reference, combine, and override definitions. LiteWire DI only stores the finished <code>AppConfig</code> object. Loading, combining, validating, or overriding the original values remains application code.</p>
+<p>For a small application, one <code>AppConfig</code> object is often enough. If it becomes too large, split it into focused objects such as <code>DatabaseConfig</code>, <code>ApiConfig</code>, and <code>CacheConfig</code> and register each object in the same way.</p></section>
+<section class="doc-source doc-guide" data-doc-source="DOC/wordpress-plugin.md"><header class="guide-header"><p class="section-label">Extended guide</p><h2 id="wordpress-plugin">WordPress plugin<a class="heading-anchor" href="#wordpress-plugin" aria-label="Link to this guide">#</a></h2><a class="source-link" href="https://github.com/doiftrue/litewire-di/blob/main/DOC/wordpress-plugin.md" target="_blank" rel="noreferrer">View Markdown source ↗</a></header><p>This example shows a small plugin with an admin settings page and an admin notice. It uses a container to connect the plugin classes.</p>
+<p>The example is intentionally simple. It works as a useful starting structure, not as a complete production plugin.</p>
+<h3 id="why-use-a-container-in-a-plugin">Why use a container in a plugin?<a class="heading-anchor" href="#why-use-a-container-in-a-plugin" aria-label="Link to this section">#</a></h3>
+<p>A WordPress plugin often starts with functions in one file. Later it gets admin pages, REST routes, repositories, API clients, and background jobs. Creating every object by hand then becomes repetitive.</p>
+<p>The container helps with this object setup:</p>
+<ul>
+<li>constructors clearly show what each class needs;</li>
+<li>concrete classes are connected automatically;</li>
+<li>interface choices and scalar configuration stay in one bootstrap file;</li>
+<li>shared objects are reused;</li>
+<li>tests can create a class with fake dependencies without loading WordPress.</li>
+</ul>
+<p>The container should be used during plugin startup. Do not pass it into every class. Normal classes should ask for their real dependencies in the constructor.</p>
+<h3 id="project-structure">Project structure<a class="heading-anchor" href="#project-structure" aria-label="Link to this section">#</a></h3>
+<div class="code-block"><div class="code-label"><span>text</span><button class="copy-code" type="button">Copy</button></div><pre><code class="language-text">my-plugin/
+├── lib/
+│   └── Container.php
+├── autoload.php
+├── my-plugin.php
+└── src/
+    ├── AdminNotice.php
+    ├── Plugin.php
+    ├── PluginConfig.php
+    ├── SettingsPage.php
+    └── Logger/
+        ├── Logger.php
+        └── WordPressLogger.php</code></pre></div>
+<h3 id="1-copy-the-container">1. Copy the container<a class="heading-anchor" href="#1-copy-the-container" aria-label="Link to this section">#</a></h3>
+<p>Create the <code>lib</code> directory and copy the LiteWire DI <a href="https://github.com/doiftrue/litewire-di/blob/main/Container.php" target="_blank" rel="noreferrer"><code>Container.php</code></a> file into it:</p>
+<div class="code-block"><div class="code-label"><span>text</span><button class="copy-code" type="button">Copy</button></div><pre><code class="language-text">my-plugin/lib/Container.php</code></pre></div>
+<p>The plugin now owns its copy of the container. Users do not need to install LiteWire DI or run Composer on their WordPress site.</p>
+<p>When you update LiteWire DI, replace this file with the new version and test the plugin. Keep the license and source information at the top of the file.</p>
+<h3 id="2-main-plugin-file">2. Main plugin file<a class="heading-anchor" href="#2-main-plugin-file" aria-label="Link to this section">#</a></h3>
+<p>Create <code>my-plugin.php</code>. This file loads the copied container and the plugin autoloader, configures the container, and starts the plugin.</p>
+<div class="code-block"><div class="code-label"><span>php</span><button class="copy-code" type="button">Copy</button></div><pre><code class="language-php">&lt;?php
+/**
+ * Plugin Name: LiteWire DI Example
+ * Description: A small plugin built with constructor injection.
+ * Requires PHP: 7.4
+ * Version: 1.0.0
+ */
+
+namespace Example\MyPlugin;
+
+defined( 'ABSPATH' ) || exit;
+
+require_once __DIR__ . '/lib/Container.php';
+require_once __DIR__ . '/autoload.php';
+
+add_action( 'plugins_loaded', 'example_my_plugin_init' );
+
+function example_my_plugin_init(): void {
+	$container = new \Kama\LiteWireDI\Container();
+
+	// The container cannot guess which class should implement an interface.
+	$container-&gt;set( Logger::class, WordPressLogger::class );
+
+	// The container cannot guess scalar values such as file paths and slugs.
+	$container-&gt;set(
+		PluginConfig::class,
+		new PluginConfig( __FILE__, 'litewire-di-example', 'lwdi_message' )
+	);
+
+	// Plugin and its remaining dependencies are created automatically.
+	$container-&gt;get( Plugin::class )-&gt;boot();
+}</code></pre></div>
+<p>This is the composition root: the one place where the application is assembled. Interface bindings and project values belong here.</p>
+<p>Configure everything before calling <code>get()</code>. <code>get()</code> stores shared objects, so changing a definition later will not update objects which were already created.</p>
+<h3 id="3-autoloader">3. Autoloader<a class="heading-anchor" href="#3-autoloader" aria-label="Link to this section">#</a></h3>
+<p>This example does not use Composer. The small autoloader maps the <code>Example\MyPlugin</code> namespace to the <code>src</code> directory.</p>
+<p>Create <code>autoload.php</code>:</p>
+<div class="code-block"><div class="code-label"><span>php</span><button class="copy-code" type="button">Copy</button></div><pre><code class="language-php">&lt;?php
+namespace Example\MyPlugin;
+
+spl_autoload_register( static function ( string $class ): void {
+	if ( ! str_starts_with( $class, __NAMESPACE__ ) ) {
+		return;
+	}
+
+	$relative_class = substr( $class, strlen( __NAMESPACE__ ) );
+	$file = __DIR__ . '/src/' . str_replace( '\\', '/', $relative_class ) . '.php';
+
+	if ( is_file( $file ) ) {
+		require_once $file;
+	}
+} );</code></pre></div>
+<h3 id="4-plugin-configuration-object">4. Plugin configuration object<a class="heading-anchor" href="#4-plugin-configuration-object" aria-label="Link to this section">#</a></h3>
+<p>Create <code>src/PluginConfig.php</code>:</p>
+<div class="code-block"><div class="code-label"><span>php</span><button class="copy-code" type="button">Copy</button></div><pre><code class="language-php">&lt;?php
+namespace Example\MyPlugin;
+
+final class PluginConfig {
+
+	private string $plugin_file;
+	private string $menu_slug;
+	private string $option_name;
+
+	public function __construct(
+		string $plugin_file,
+		string $menu_slug,
+		string $option_name
+	) {
+		$this-&gt;plugin_file = $plugin_file;
+		$this-&gt;menu_slug = $menu_slug;
+		$this-&gt;option_name = $option_name;
+	}
+
+	public function plugin_file(): string {
+		return $this-&gt;plugin_file;
+	}
+
+	public function menu_slug(): string {
+		return $this-&gt;menu_slug;
+	}
+
+	public function option_name(): string {
+		return $this-&gt;option_name;
+	}
+}</code></pre></div>
+<p>A configuration object is better than asking the container for string keys. It gives the values clear names and keeps them type-safe.</p>
+<h3 id="5-logger-interface-and-implementation">5. Logger interface and implementation<a class="heading-anchor" href="#5-logger-interface-and-implementation" aria-label="Link to this section">#</a></h3>
+<p>Create <code>src/Logger/Logger.php</code>:</p>
+<div class="code-block"><div class="code-label"><span>php</span><button class="copy-code" type="button">Copy</button></div><pre><code class="language-php">&lt;?php
+namespace Example\MyPlugin\Logger;
+
+interface Logger {
+	public function info( string $message ): void;
+}</code></pre></div>
+<p>Create <code>src/Logger/WordPressLogger.php</code>:</p>
+<div class="code-block"><div class="code-label"><span>php</span><button class="copy-code" type="button">Copy</button></div><pre><code class="language-php">&lt;?php
+namespace Example\MyPlugin\Logger;
+
+final class WordPressLogger implements Logger {
+	public function info( string $message ): void {
+		error_log( '[LiteWire DI Example] ' . $message );
+	}
+}</code></pre></div>
+<p>The plugin classes depend on <code>Logger</code>, not on <code>WordPressLogger</code>. Production uses the WordPress implementation. A test can pass a small fake logger.</p>
+<h3 id="6-settings-page">6. Settings page<a class="heading-anchor" href="#6-settings-page" aria-label="Link to this section">#</a></h3>
+<p>Create <code>src/SettingsPage.php</code>:</p>
+<div class="code-block"><div class="code-label"><span>php</span><button class="copy-code" type="button">Copy</button></div><pre><code class="language-php">&lt;?php
+
+namespace Example\MyPlugin;
+
+use Example\MyPlugin\Logger\Logger;
+
+final class SettingsPage {
+	private PluginConfig $config;
+	private Logger $logger;
+
+	public function __construct( PluginConfig $config, Logger $logger ) {
+		$this-&gt;config = $config;
+		$this-&gt;logger = $logger;
+	}
+
+	public function register_hooks(): void {
+		add_action( 'admin_menu', [ $this, 'add_page' ] );
+		add_action( 'admin_init', [ $this, 'register_setting' ] );
+		add_filter(
+			'plugin_action_links_' . plugin_basename( $this-&gt;config-&gt;plugin_file() ),
+			[ $this, 'add_action_link' ]
+		);
+	}
+
+	public function add_action_link( array $links ): array {
+		$url = admin_url( 'options-general.php?page=' . $this-&gt;config-&gt;menu_slug() );
+		array_unshift(
+			$links,
+			'&lt;a href=&quot;' . esc_url( $url ) . '&quot;&gt;Settings&lt;/a&gt;'
+		);
+
+		return $links;
+	}
+
+	public function add_page(): void {
+		add_options_page(
+			'Example message',
+			'Example message',
+			'manage_options',
+			$this-&gt;config-&gt;menu_slug(),
+			[ $this, 'render' ]
+		);
+	}
+
+	public function register_setting(): void {
+		register_setting(
+			$this-&gt;config-&gt;menu_slug(),
+			$this-&gt;config-&gt;option_name(),
+			[ 'sanitize_callback' =&gt; [ $this, 'sanitize' ] ]
+		);
+	}
+
+	public function sanitize( $value ): string {
+		$message = sanitize_text_field( (string) $value );
+		$this-&gt;logger-&gt;info( 'The admin message was updated.' );
+
+		return $message;
+	}
+
+	public function render(): void {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			return;
+		}
+
+		$value = get_option( $this-&gt;config-&gt;option_name(), '' );
+		?&gt;
+		&lt;div class=&quot;wrap&quot;&gt;
+			&lt;h1&gt;&lt;?php echo esc_html( get_admin_page_title() ); ?&gt;&lt;/h1&gt;
+			&lt;form action=&quot;options.php&quot; method=&quot;post&quot;&gt;
+				&lt;?php settings_fields( $this-&gt;config-&gt;menu_slug() ); ?&gt;
+				&lt;label for=&quot;lwdi-message&quot;&gt;Message&lt;/label&gt;
+				&lt;input
+					id=&quot;lwdi-message&quot;
+					class=&quot;regular-text&quot;
+					name=&quot;&lt;?php echo esc_attr( $this-&gt;config-&gt;option_name() ); ?&gt;&quot;
+					value=&quot;&lt;?php echo esc_attr( (string) $value ); ?&gt;&quot;
+				&gt;
+				&lt;?php submit_button(); ?&gt;
+			&lt;/form&gt;
+		&lt;/div&gt;
+		&lt;?php
+	}
+}</code></pre></div>
+<p><code>SettingsPage</code> asks for <code>PluginConfig</code> and <code>Logger</code>. The bootstrap registered both. LiteWire DI passes them into the constructor.</p>
+<h3 id="7-admin-notice">7. Admin notice<a class="heading-anchor" href="#7-admin-notice" aria-label="Link to this section">#</a></h3>
+<p>Create <code>src/AdminNotice.php</code>:</p>
+<div class="code-block"><div class="code-label"><span>php</span><button class="copy-code" type="button">Copy</button></div><pre><code class="language-php">&lt;?php
+
+namespace Example\MyPlugin;
+
+final class AdminNotice {
+
+	private PluginConfig $config;
+
+	public function __construct( PluginConfig $config ) {
+		$this-&gt;config = $config;
+	}
+
+	public function register_hooks(): void {
+		add_action( 'admin_notices', [ $this, 'render' ] );
+	}
+
+	public function render(): void {
+		$message = get_option( $this-&gt;config-&gt;option_name(), '' );
+
+		if ( ! is_string( $message ) || $message === '' ) {
+			return;
+		}
+		?&gt;
+		&lt;div class=&quot;notice notice-info&quot;&gt;
+			&lt;p&gt;&lt;?php echo esc_html( $message ); ?&gt;&lt;/p&gt;
+		&lt;/div&gt;
+		&lt;?php
+	}
+
+}</code></pre></div>
+<p><code>AdminNotice</code> uses the same shared <code>PluginConfig</code> object as <code>SettingsPage</code>.</p>
+<h3 id="8-plugin-controller">8. Plugin controller<a class="heading-anchor" href="#8-plugin-controller" aria-label="Link to this section">#</a></h3>
+<p>Create <code>src/Plugin.php</code>:</p>
+<div class="code-block"><div class="code-label"><span>php</span><button class="copy-code" type="button">Copy</button></div><pre><code class="language-php">&lt;?php
+
+namespace Example\MyPlugin;
+
+final class Plugin {
+
+	private SettingsPage $settings_page;
+	private AdminNotice $admin_notice;
+
+	public function __construct(
+		SettingsPage $settings_page,
+		AdminNotice $admin_notice
+	) {
+		$this-&gt;settings_page = $settings_page;
+		$this-&gt;admin_notice = $admin_notice;
+	}
+
+	public function boot(): void {
+		$this-&gt;settings_page-&gt;register_hooks();
+		$this-&gt;admin_notice-&gt;register_hooks();
+	}
+
+}</code></pre></div>
+<p>The bootstrap only asks for <code>Plugin</code>. LiteWire DI follows the constructors and builds this graph:</p>
+<div class="code-block"><div class="code-label"><span>text</span><button class="copy-code" type="button">Copy</button></div><pre><code class="language-text">Plugin
+├── SettingsPage
+│   ├── PluginConfig
+│   └── Logger → WordPressLogger
+└── AdminNotice
+    └── PluginConfig (same shared object)</code></pre></div>
+<h3 id="how-to-add-another-service">How to add another service<a class="heading-anchor" href="#how-to-add-another-service" aria-label="Link to this section">#</a></h3>
+<p>For a concrete class, add it to a constructor. No bootstrap change is needed:</p>
+<div class="code-block"><div class="code-label"><span>php</span><button class="copy-code" type="button">Copy</button></div><pre><code class="language-php">public function __construct( PluginConfig $config, MessageRepository $messages ) {
+	$this-&gt;config = $config;
+	$this-&gt;messages = $messages;
+}</code></pre></div>
+<p>Register something only when LiteWire DI cannot decide how to create it:</p>
+<ul>
+<li>bind an interface to a concrete class with <code>set()</code>;</li>
+<li>register an existing configured object;</li>
+<li>use a factory for scalar values or third-party APIs.</li>
+</ul>
+<h3 id="testing-a-class-without-the-container">Testing a class without the container<a class="heading-anchor" href="#testing-a-class-without-the-container" aria-label="Link to this section">#</a></h3>
+<p>The container is object setup, not a requirement inside your classes. A unit test can create <code>SettingsPage</code> directly:</p>
+<div class="code-block"><div class="code-label"><span>php</span><button class="copy-code" type="button">Copy</button></div><pre><code class="language-php">$config = new PluginConfig( '/tmp/my-plugin.php', 'test-menu', 'test-option' );
+$logger = new FakeLogger();
+$page = new SettingsPage( $config, $logger );</code></pre></div>
+<p>This is the main reason to keep dependencies in constructors: they are easy to see and easy to replace in tests.</p></section>
+				<!-- DOCS:END -->
+			</article>
+
+			<aside class="page-toc" id="documentation-sidebar" aria-label="Documentation navigation">
+				<button class="sidebar-close" type="button" aria-label="Close documentation navigation">×</button>
+				<nav class="document-tabs" aria-label="Documentation pages">
+					<a class="is-active" href="#litewire-di-container" data-document="README.md"><span>01</span>Overview</a>
+					<a href="#configuration" data-document="DOC/config-usage-example.md"><span>02</span>Configuration</a>
+					<a href="#wordpress-plugin" data-document="DOC/wordpress-plugin.md"><span>03</span>WordPress plugin</a>
+				</nav>
+				<div class="page-toc-sections">
+					<p>On this page</p>
+					<nav id="page-toc-links"></nav>
+				</div>
+			</aside>
+			<button class="sidebar-toggle" type="button" aria-controls="documentation-sidebar" aria-expanded="false"><span aria-hidden="true">☰</span><span>Docs</span></button>
 		</div>
 	</section>
 
 	<section class="cta" aria-label="Get LiteWire DI">
 		<div class="cta-box wrap reveal">
-			<h2>Ready to replace configuration with four clear methods?</h2>
-			<a class="button" href="https://github.com/doiftrue/litewire-di" target="_blank" rel="noreferrer">View on GitHub ↗</a>
+			<div><h2>Ready to wire your project?</h2></div>
+			<a class="button button-light" href="https://github.com/doiftrue/litewire-di" target="_blank" rel="noreferrer">View on GitHub <span aria-hidden="true">↗</span></a>
 		</div>
 	</section>
 </main>
@@ -164,12 +955,15 @@
 		<span>LiteWire DI by Timur Kamaev. MIT License.</span>
 		<div class="footer-links">
 			<a href="https://github.com/doiftrue/litewire-di" target="_blank" rel="noreferrer">Repository</a>
-			<a href="https://github.com/doiftrue/litewire-di/blob/main/README.md" target="_blank" rel="noreferrer">Documentation</a>
+			<a href="https://github.com/doiftrue/litewire-di/blob/main/README.md" target="_blank" rel="noreferrer">README</a>
 			<a href="https://wp-kama.com/" target="_blank" rel="noreferrer">Author</a>
 		</div>
 	</div>
 </footer>
 
-<script src="./script.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/prismjs/prism.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/prismjs/components/prism-markup-templating.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/prismjs/components/prism-php.min.js"></script>
+<script src="./assets/script.js"></script>
 </body>
 </html>

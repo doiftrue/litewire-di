@@ -137,12 +137,10 @@ $service = $container-&gt;get( Service::class );</code></pre>
 
 		<div class="docs-layout wrap">
 			<article class="docs-article" id="docs-content">
-				<!-- Generated from README.md and docs/*.md by page/build-docs.mjs. -->
+				<!-- Generated from docs/content/*.md and benchmarks/README.md by docs/build-docs.mjs. -->
 				<!-- DOCS:START -->
-<section class="doc-source doc-overview" data-doc-source="README.md"><p><a href="https://github.com/doiftrue/litewire-di/actions/workflows/ci.yml" target="_blank" rel="noreferrer"><img src="https://github.com/doiftrue/litewire-di/actions/workflows/ci.yml/badge.svg" alt="Last CI" loading="lazy"></a></p>
-<h2 id="litewire-di-container">LiteWire DI Container<a class="heading-anchor" href="#litewire-di-container" aria-label="Link to this section">#</a></h2>
+<section class="doc-source doc-overview" data-doc-source="docs/content/overview.md"><h2 id="litewire-di-container">LiteWire DI Container<a class="heading-anchor" href="#litewire-di-container" aria-label="Link to this section">#</a></h2>
 <p>A tiny single-file autowire DI container for PHP and WordPress applications.</p>
-<p>See: https://doiftrue.github.io/litewire-di/</p>
 <h3 id="compatibility">Compatibility<a class="heading-anchor" href="#compatibility" aria-label="Link to this section">#</a></h3>
 <p>LiteWire DI supports PHP 7.4 and every PHP 8 minor release from 8.0 through 8.5. Each supported version is tested by CI. Future PHP versions are added after compatibility has been verified.</p>
 <h3 id="design-goals">Design goals<a class="heading-anchor" href="#design-goals" aria-label="Link to this section">#</a></h3>
@@ -169,25 +167,19 @@ $container-&gt;has( Service::class );</code></pre></div>
 <li>Inject the container itself as a dependency.</li>
 <li>Cache Reflection data inside each container instance.</li>
 <li>Detect circular dependencies and show the full resolution chain.</li>
-<li>Include benchmarks, PHPDoc, and inline comments.</li>
-<li>Include Composer configuration for publishing the package on Packagist.</li>
-<li>Test the package with PHPUnit and PHPStan in CI.</li>
-<li>Use PHPStan at level 9.</li>
 </ul>
 <p>Partially supported features:</p>
 <ul>
-<li>Services can receive configuration through factories, runtime parameters, or a registered configuration object, but the container does not have a separate configuration array. See <a href="#configuration">Passing configuration to services</a>.</li>
+<li>Services can receive configuration through factories, runtime parameters, or a registered configuration object, but the container does not have a separate configuration array.</li>
 <li>Invokable objects can be wrapped in a closure, but objects with <code>__invoke()</code> are not treated as factories automatically.</li>
 <li>The container uses normal PHP code for configuration. It does not provide attributes or a special configuration language.</li>
-<li>CI generates a test coverage report for <code>Container.php</code>; the badge remains static.</li>
-<li>The package is ready for Packagist, but publishing it is a separate manual step.</li>
 </ul>
 <h3 id="usage-guide">Usage Guide<a class="heading-anchor" href="#usage-guide" aria-label="Link to this section">#</a></h3>
 <p>LiteWire DI has four public methods:</p>
 <ul>
 <li><code>has()</code> checks if a service can be loaded.</li>
 <li><code>set()</code> tells the container how to create an object.</li>
-<li><code>get()</code> returns a shared object (and create it if now exists).</li>
+<li><code>get()</code> returns a shared object and creates it if it does not exist yet.</li>
 <li><code>make()</code> creates a new object.</li>
 </ul>
 <p>API:</p>
@@ -228,11 +220,6 @@ $container-&gt;set( Plugin::class, function () {
 add_action( 'plugins_loaded', function () use ( $container ) {
 	$container-&gt;get( Plugin::class )-&gt;init();
 } );</code></pre></div>
-<p>More examples:</p>
-<ul>
-<li><a href="#configuration">Passing configuration to services</a></li>
-<li><a href="https://github.com/doiftrue/litewire-di/blob/main/DOC/wordpress-plugin.md" target="_blank" rel="noreferrer">Complex WordPress plugin example</a></li>
-</ul>
 <h3 id="has">has()<a class="heading-anchor" href="#has" aria-label="Link to this section">#</a></h3>
 <p>Checks whether the service was registered, already resolved, or can be autowired.</p>
 <p>For an unregistered class, its constructor and complete dependency graph must be valid.</p>
@@ -240,9 +227,9 @@ add_action( 'plugins_loaded', function () use ( $container ) {
 <div class="code-block"><div class="code-label"><span>php</span><button class="copy-code" type="button">Copy</button></div><pre><code class="language-php">$container-&gt;has( Service::class ); // true if registered, resolved, or autowireable
 $container-&gt;has( 'Unknown' );      // false</code></pre></div>
 <h3 id="get">get()<a class="heading-anchor" href="#get" aria-label="Link to this section">#</a></h3>
-<p>Gets a shared service instance – singleton.</p>
+<p>Gets a shared service instance.</p>
 <p>If the service was already created, the same object is returned.</p>
-<h4 id="get-autowiring">get() – Autowiring<a class="heading-anchor" href="#get-autowiring" aria-label="Link to this section">#</a></h4>
+<h4 id="get-autowiring">get() - Autowiring<a class="heading-anchor" href="#get-autowiring" aria-label="Link to this section">#</a></h4>
 <p><code>get()</code> can create an unregistered class by resolving the class dependencies declared in its constructor:</p>
 <div class="code-block"><div class="code-label"><span>php</span><button class="copy-code" type="button">Copy</button></div><pre><code class="language-php">class Logger {
 	public function write( string $message ): void {
@@ -265,14 +252,14 @@ class Report_Service {
 $service = $container-&gt;get( Report_Service::class );
 $service-&gt;generate();</code></pre></div>
 <p>Neither <code>Report_Service</code> nor <code>Logger</code> needs to be registered: the container inspects both constructors and builds the complete dependency graph automatically.</p>
-<h4 id="get-shared-services">get() – Shared services<a class="heading-anchor" href="#get-shared-services" aria-label="Link to this section">#</a></h4>
+<h4 id="get-shared-services">get() - Shared services<a class="heading-anchor" href="#get-shared-services" aria-label="Link to this section">#</a></h4>
 <p><code>get()</code> resolves a service and stores it in the container. The next call returns the same instance.</p>
 <div class="code-block"><div class="code-label"><span>php</span><button class="copy-code" type="button">Copy</button></div><pre><code class="language-php">$a = $container-&gt;get( Some_Service::class );
 $b = $container-&gt;get( Some_Service::class );
 
 var_dump( $a === $b ); // true</code></pre></div>
-<h4 id="get-scalar-values">get() – Scalar values<a class="heading-anchor" href="#get-scalar-values" aria-label="Link to this section">#</a></h4>
-<p>Required scalar values cannot be resolved automatically – <code>ContainerException</code> will be thrown.</p>
+<h4 id="get-scalar-values">get() - Scalar values<a class="heading-anchor" href="#get-scalar-values" aria-label="Link to this section">#</a></h4>
+<p>Required scalar values cannot be resolved automatically. <code>ContainerException</code> will be thrown.</p>
 <div class="code-block"><div class="code-label"><span>php</span><button class="copy-code" type="button">Copy</button></div><pre><code class="language-php">final class Config {
 	public function __construct(
 		private string $path
@@ -294,7 +281,7 @@ $container-&gt;get( Config::class ); // ContainerException</code></pre></div>
 $config = $container-&gt;get( Config::class ); // no error</code></pre></div>
 <h3 id="set">set()<a class="heading-anchor" href="#set" aria-label="Link to this section">#</a></h3>
 <p>Registers a service definition.</p>
-<p>Service IDs must be existing class/interface name – regular string isn’t supported:</p>
+<p>Service IDs must be existing class/interface names. Regular strings are not supported:</p>
 <div class="code-block"><div class="code-label"><span>php</span><button class="copy-code" type="button">Copy</button></div><pre><code class="language-php">$container-&gt;set( Logger_Interface::class, File_Logger::class ); // valid
 $container-&gt;set( 'logger', File_Logger::class );                // InvalidArgumentException</code></pre></div>
 <p>Accepted values:</p>
@@ -304,20 +291,20 @@ $container-&gt;set( 'logger', File_Logger::class );                // InvalidArg
 <li>closure factory - <code>static fn () =&gt; new MyClass()</code></li>
 </ul>
 <aside class="callout important"><strong>Important</strong><p>Configure the container before the first call to <code>get()</code>. Replacing a definition with <code>set()</code> removes the stored instance for that ID, but does not rebuild other shared services that were already created with the previous instance as a dependency.</p></aside>
-<h4 id="set-register-an-existing-object">set() – Register an existing object<a class="heading-anchor" href="#set-register-an-existing-object" aria-label="Link to this section">#</a></h4>
+<h4 id="set-register-an-existing-object">set() - Register an existing object<a class="heading-anchor" href="#set-register-an-existing-object" aria-label="Link to this section">#</a></h4>
 <div class="code-block"><div class="code-label"><span>php</span><button class="copy-code" type="button">Copy</button></div><pre><code class="language-php">$container-&gt;set( Logger::class, $logger );
 $service = $container-&gt;get( Service::class );</code></pre></div>
-<h4 id="set-register-an-interface-implementation">set() – Register an interface implementation<a class="heading-anchor" href="#set-register-an-interface-implementation" aria-label="Link to this section">#</a></h4>
+<h4 id="set-register-an-interface-implementation">set() - Register an interface implementation<a class="heading-anchor" href="#set-register-an-interface-implementation" aria-label="Link to this section">#</a></h4>
 <div class="code-block"><div class="code-label"><span>php</span><button class="copy-code" type="button">Copy</button></div><pre><code class="language-php">$container-&gt;set( Logger_Interface::class, File_Logger::class );
 $logger = $container-&gt;get( Logger_Interface::class );</code></pre></div>
-<h4 id="set-register-a-factory">set() – Register a factory<a class="heading-anchor" href="#set-register-a-factory" aria-label="Link to this section">#</a></h4>
+<h4 id="set-register-a-factory">set() - Register a factory<a class="heading-anchor" href="#set-register-a-factory" aria-label="Link to this section">#</a></h4>
 <p>Factories must return an object.</p>
 <div class="code-block"><div class="code-label"><span>php</span><button class="copy-code" type="button">Copy</button></div><pre><code class="language-php">$container-&gt;set( Client::class, static function () {
 	return new Client( 'https://example.com' );
 } );
 
 $client = $container-&gt;get( Client::class );</code></pre></div>
-<h4 id="set-factory-autowiring">set() – Factory autowiring<a class="heading-anchor" href="#set-factory-autowiring" aria-label="Link to this section">#</a></h4>
+<h4 id="set-factory-autowiring">set() - Factory autowiring<a class="heading-anchor" href="#set-factory-autowiring" aria-label="Link to this section">#</a></h4>
 <p>Factory parameters are autowired for both <code>get()</code> and <code>make()</code>:</p>
 <div class="code-block"><div class="code-label"><span>php</span><button class="copy-code" type="button">Copy</button></div><pre><code class="language-php">$container-&gt;set( Mailer::class, static function ( Logger $logger ) {
 	return new Mailer( $logger );
@@ -325,7 +312,7 @@ $client = $container-&gt;get( Client::class );</code></pre></div>
 
 $shared_mailer = $container-&gt;get( Mailer::class );
 $fresh_mailer = $container-&gt;make( Mailer::class );</code></pre></div>
-<p>Type-hint <code>Container</code> in factory parameters to receive the container for factory:</p>
+<p>Type-hint <code>Container</code> in factory parameters to receive the container:</p>
 <div class="code-block"><div class="code-label"><span>php</span><button class="copy-code" type="button">Copy</button></div><pre><code class="language-php">$container-&gt;set( Plugin::class, static function ( Container $container ) {
 	return new Plugin( $container-&gt;get( Config::class ) );
 } );
@@ -333,7 +320,7 @@ $fresh_mailer = $container-&gt;make( Mailer::class );</code></pre></div>
 $plugin = $container-&gt;get( Plugin::class );</code></pre></div>
 <h3 id="make">make()<a class="heading-anchor" href="#make" aria-label="Link to this section">#</a></h3>
 <p>Creates a fresh object each time from a registered definition or class name.</p>
-<p>Unlike <code>get()</code>, it does not store (caches) the created object in the container.</p>
+<p>Unlike <code>get()</code>, it does not store the created object in the container.</p>
 <aside class="callout note"><strong>Note</strong><p>Definitions registered as existing object instances cannot be used with <code>make()</code> - use <code>get()</code> to retrieve those instances.</p></aside>
 <aside class="callout note"><strong>Note</strong><p>Only the requested root object is created anew. Missing class dependencies are resolved through <code>get()</code>, so those dependencies are shared and reused by subsequent calls.</p></aside>
 <aside class="callout note"><strong>Note</strong><p>Class-string definitions are instantiated again, and closure factories are invoked on every call.</p></aside>
@@ -359,42 +346,21 @@ var_dump( $a === $b ); // false</code></pre></div>
 $mailer = $container-&gt;make( Mailer::class, [
 	'from' =&gt; 'admin@example.com',
 ] );</code></pre></div>
-<h3 id="benchmarks">Benchmarks<a class="heading-anchor" href="#benchmarks" aria-label="Link to this section">#</a></h3>
-<p>Performance benchmarks cover direct instantiation, cold and stored <code>get()</code>, cold and reflection-cached <code>make()</code>, factory invocation, and both cold and stored deep autowiring.</p>
-<p>Benchmark results depend on the machine and PHP version. Compare changes in the same environment rather than treating individual timings as universal limits.</p>
-<p>Results for PHP 8.5.5 (with OPcache enabled):</p>
-<div class="table-wrap"><table><thead><tr><th>Subject</th><th>Runs × Rounds</th><th>Mem Peak</th><th>Time (Variance)</th></tr></thead><tbody><tr><td>direct_instantiation</td><td>10 000 × 5</td><td>678.904kb</td><td>0.078μs (±5.48%)</td></tr><tr><td>get__cold</td><td>10 000 × 5</td><td>16.449mb</td><td>2.027μs (±0.65%)</td></tr><tr><td>get__stored</td><td>10 000 × 5</td><td>678.880kb</td><td>0.058μs (±4.47%)</td></tr><tr><td>get__deep_autowiring__cold</td><td>10 000 × 5</td><td>18.494mb</td><td>2.895μs (±0.32%)</td></tr><tr><td>get__deep_autowiring__stored</td><td>10 000 × 5</td><td>666.744kb</td><td>0.059μs (±4.00%)</td></tr><tr><td>make__reflection__cold</td><td>10 000 × 5</td><td>15.889mb</td><td>2.016μs (±1.19%)</td></tr><tr><td>make__reflection__cached</td><td>10 000 × 5</td><td>678.904kb</td><td>0.804μs (±3.53%)</td></tr><tr><td>make__registered_factory</td><td>10 000 × 5</td><td>678.904kb</td><td>0.416μs (±6.95%)</td></tr></tbody></table></div>
-<p>Legend:</p>
-<ul>
-<li><strong>Subject</strong> — the operation measured by PHPBench.</li>
-<li><strong>Runs</strong> — time benchmark method executed per round.</li>
-<li><strong>Rounds</strong> — how many times the complete benchmark is repeated.</li>
-<li><strong>Time</strong> — modal execution time per run (1 μs = 0.001 ms).</li>
-<li><strong>Variance</strong> — how much execution time differs between rounds.</li>
-<li><strong>Mem Peak</strong> — peak memory usage of the entire benchmark process.</li>
-</ul>
-<p>Conclusions:</p>
-<p>Unlike larger containers such as PHP-DI, LiteWire DI does not keep a compiled container between requests. According to this benchmark, it would save only about 0.121 ms for 100 objects or 1.21 ms for 1,000. For small applications, this is usually too little to justify compilation, cache files, and cache invalidation.</p>
-<p>A compiled container may still help large applications with thousands of services. LiteWire DI instead favors simpler setup and predictable runtime behavior for smaller dependency graphs.</p>
-<ul>
-<li>Reflection caching makes <code>make()</code> about 2.5× faster.</li>
-<li>A registered factory is about 1.8× faster than cached reflection.</li>
-<li>Deep autowiring costs 2.744 μs initially, then 0.061 μs for stored results.</li>
-</ul>
-<p>See: <a href="https://github.com/doiftrue/litewire-di/blob/main/benchmarks/README.md" target="_blank" rel="noreferrer">Detailed benchmark results</a></p>
+<h3 id="performance">Performance<a class="heading-anchor" href="#performance" aria-label="Link to this section">#</a></h3>
+<p>The detailed benchmark report is available in the <a href="#benchmarks">Benchmarks</a> section.</p>
 <h3 id="comparison-with-other-containers">Comparison with other containers<a class="heading-anchor" href="#comparison-with-other-containers" aria-label="Link to this section">#</a></h3>
 <div class="table-wrap"><table><thead><tr><th>Container</th><th>Deps</th><th>PSR-11</th><th>Autowiring</th><th>Shared services</th><th>New instance method</th><th>Scalars</th><th>Config</th></tr></thead><tbody><tr><td>LiteWire DI</td><td>no</td><td>style</td><td>yes</td><td><code>get()</code></td><td><code>make()</code></td><td>runtime</td><td>no</td></tr><tr><td>PHP-DI</td><td>yes</td><td>yes</td><td>yes</td><td><code>get()</code></td><td><code>make()</code></td><td>yes</td><td>yes</td></tr><tr><td>Symfony DI</td><td>yes</td><td>yes</td><td>yes</td><td><code>get()</code></td><td>factories/services</td><td>yes</td><td>yes</td></tr><tr><td>Laravel Container</td><td>yes</td><td>partly/yes</td><td>yes</td><td><code>singleton(), instance()</code></td><td><code>make()</code></td><td>yes</td><td>yes</td></tr><tr><td>Laminas ServiceManager</td><td>yes</td><td>yes</td><td>yes</td><td>shared services</td><td><code>build()</code></td><td>yes</td><td>yes</td></tr><tr><td>League Container</td><td>yes</td><td>yes</td><td>yes</td><td><code>addShared()</code></td><td>definitions/factories</td><td>yes</td><td>yes</td></tr><tr><td>Yii DI Container</td><td>yes</td><td>no</td><td>yes</td><td><code>setSingleton()</code></td><td><code>get()</code></td><td>yes</td><td>yes</td></tr><tr><td>Pimple</td><td>yes</td><td>no</td><td>no</td><td>default behavior</td><td><code>factory()</code></td><td>yes</td><td>yes</td></tr><tr><td>Nette DI</td><td>yes</td><td>no/adapter</td><td>yes</td><td>generated services</td><td>generated factories</td><td>yes</td><td>yes</td></tr></tbody></table></div>
 <p>Best for:</p>
 <ul>
-<li><code>LiteWire DI</code> – simple PHP apps, WP plugins</li>
-<li><code>PHP-DI</code> – medium and large apps</li>
-<li><code>Symfony DI</code> – Symfony apps, compiled container</li>
-<li><code>Laravel Container</code> – Laravel apps</li>
-<li><code>Laminas ServiceManager</code> – Laminas/Mezzio apps</li>
-<li><code>Pimple</code> – small explicit service containers</li>
-<li><code>League Container</code> – framework-agnostic DI</li>
-<li><code>Yii DI Container</code> – Yii apps</li>
-<li><code>Nette DI</code> – Nette apps</li>
+<li><code>LiteWire DI</code> - simple PHP apps, WP plugins</li>
+<li><code>PHP-DI</code> - medium and large apps</li>
+<li><code>Symfony DI</code> - Symfony apps, compiled container</li>
+<li><code>Laravel Container</code> - Laravel apps</li>
+<li><code>Laminas ServiceManager</code> - Laminas/Mezzio apps</li>
+<li><code>Pimple</code> - small explicit service containers</li>
+<li><code>League Container</code> - framework-agnostic DI</li>
+<li><code>Yii DI Container</code> - Yii apps</li>
+<li><code>Nette DI</code> - Nette apps</li>
 </ul>
 <h3 id="limitations">Limitations<a class="heading-anchor" href="#limitations" aria-label="Link to this section">#</a></h3>
 <p>LiteWire DI intentionally does not include:</p>
@@ -415,24 +381,66 @@ $mailer = $container-&gt;make( Mailer::class, [
 </ul>
 <p>Required scalar constructor parameters must be provided manually.</p>
 <p>These features would make the public API larger and less focused. The main advantage of LiteWire DI is its strict object model in one small PHP file.</p>
-<p>Full PSR-11 support is also a tradeoff because it requires a dependency on <code>psr/container</code>. LiteWire DI keeps a PSR-11-style API instead. A separate optional adapter may be added in the future.</p>
-<p>The main next tasks are to make <code>has()</code> fully correct, publish real test coverage, and test every supported PHP version.</p>
-<h3 id="inspired-by">Inspired by<a class="heading-anchor" href="#inspired-by" aria-label="Link to this section">#</a></h3>
-<p>Inspired by <a href="https://github.com/renakdup/simple-dic" target="_blank" rel="noreferrer">Simple DIC</a></p>
-<p>LiteWire DI keeps the same single-file, dependency-free approach, but uses a stricter, object-only service model:</p>
-<ol>
-<li>Service IDs must be existing class or interface names. Arbitrary string keys are rejected.</li>
-<li>The container stores only objects other values and arrays cannot be registered.</li>
-<li><code>make()</code> accepts named runtime parameters for constructors and factories.</li>
-<li><code>make()</code> respects registered class and factory definitions instead of resolving only the class passed as its ID.</li>
-<li><code>has()</code> reports existing concrete classes that can be autowired without prior registration.</li>
-<li>Factory parameters are resolved in the same way as constructor parameters in both <code>get()</code> and <code>make()</code>.</li>
-<li>Generic PHPDoc preserves the concrete return type of <code>get()</code> and <code>make()</code> for IDEs and static analysis.</li>
-<li>A factory may request the container, other services, default values, and runtime values.</li>
-<li>Factory results are validated: returning a primitive, array, or <code>null</code> throws a <code>ContainerException</code>.</li>
-<li>Circular dependencies are detected and reported with the resolution chain.</li>
-<li>Invalid or unsupported definitions and parameters fail with explicit exceptions.</li>
-</ol></section>
+<p>Full PSR-11 support is also a tradeoff because it requires a dependency on <code>psr/container</code>. LiteWire DI keeps a PSR-11-style API instead. A separate optional adapter may be added in the future.</p></section>
+<section class="doc-source doc-guide" data-doc-source="benchmarks/README.md"><header class="guide-header"><p class="section-label">Report</p><h2 id="benchmarks">Benchmarks<a class="heading-anchor" href="#benchmarks" aria-label="Link to this guide">#</a></h2><a class="source-link" href="https://github.com/doiftrue/litewire-di/blob/main/benchmarks/README.md" target="_blank" rel="noreferrer">View Markdown source ↗</a></header><p>This report records the latest detailed performance measurements for LiteWire DI. Benchmark results depend on the machine, PHP version, loaded extensions, and background load, so compare runs made in the same environment.</p>
+<h3 id="latest-run">Latest run<a class="heading-anchor" href="#latest-run" aria-label="Link to this section">#</a></h3>
+<ul>
+<li>Date: 2026-07-06</li>
+<li>PHP: 8.5.5</li>
+<li>PHPBench: 1.7.0</li>
+<li>OPcache: enabled</li>
+<li>Xdebug: disabled</li>
+<li>Subjects: 8</li>
+<li>Failures and errors: 0</li>
+</ul>
+<div class="table-wrap"><table><thead><tr><th>Subject</th><th>Runs × Rounds</th><th>Memory peak</th><th>Time</th><th>Variance</th></tr></thead><tbody><tr><td><code>direct_instantiation</code></td><td>10,000 × 5</td><td>666.744 KB</td><td>0.078 μs</td><td>±2.36%</td></tr><tr><td><code>get__cold</code></td><td>10,000 × 5</td><td>16.422 MB</td><td>2.055 μs</td><td>±1.38%</td></tr><tr><td><code>get__stored</code></td><td>10,000 × 5</td><td>666.720 KB</td><td>0.060 μs</td><td>±2.35%</td></tr><tr><td><code>make__reflection__cold</code></td><td>10,000 × 5</td><td>15.862 MB</td><td>1.986 μs</td><td>±1.44%</td></tr><tr><td><code>make__reflection__cached</code></td><td>10,000 × 5</td><td>666.744 KB</td><td>0.799 μs</td><td>±1.57%</td></tr><tr><td><code>make__registered_factory</code></td><td>10,000 × 5</td><td>666.744 KB</td><td>0.419 μs</td><td>±2.68%</td></tr><tr><td><code>get__deep_autowiring__cold</code></td><td>10,000 × 5</td><td>18.467 MB</td><td>2.932 μs</td><td>±0.86%</td></tr><tr><td><code>get__deep_autowiring__stored</code></td><td>10,000 × 5</td><td>666.744 KB</td><td>0.059 μs</td><td>±4.11%</td></tr><tr><td><code>has__resolvable_class__cold</code></td><td>10,000 × 5</td><td>11.356 MB</td><td>2.232 μs</td><td>±2.92%</td></tr><tr><td><code>has__resolvable_class__stored</code></td><td>10,000 × 5</td><td>739.432 KB</td><td>0.120 μs</td><td>±2.64%</td></tr></tbody></table></div>
+<h3 id="column-legend">Column legend<a class="heading-anchor" href="#column-legend" aria-label="Link to this section">#</a></h3>
+<ul>
+<li><strong>Subject</strong> — the operation measured by PHPBench.</li>
+<li><strong>Runs</strong> — the number of times the subject is executed during each round (<code>@Revs(10000)</code>).</li>
+<li><strong>Rounds</strong> — the number of independently measured iterations (<code>@Iterations(5)</code>).</li>
+<li><strong>Memory peak</strong> — the peak memory used by the complete benchmark process while measuring that subject. It is not the per-call allocation.</li>
+<li><strong>Time</strong> — the modal execution time for one subject call. One microsecond (<code>μs</code>) is 0.001 milliseconds.</li>
+<li><strong>Variance</strong> — relative standard deviation between measured iterations. Lower values indicate a more stable result.</li>
+</ul>
+<h3 id="subjects">Subjects<a class="heading-anchor" href="#subjects" aria-label="Link to this section">#</a></h3>
+<ul>
+<li><strong>direct_instantiation</strong></li>
+<p>Creates <code>ClassWithDeps</code> and <code>SimpleClass</code> directly with <code>new</code>. This is the baseline without container work.</p>
+</ul>
+<ul>
+<li><strong>get__cold</strong></li>
+<p>Creates a new container and resolves <code>ClassWithDeps</code> for the first time. The measurement includes reflection, dependency discovery, object construction, and storage of the shared instance.</p>
+</ul>
+<ul>
+<li><strong>get__stored</strong></li>
+<p>Returns a previously resolved shared <code>ClassWithDeps</code> instance. This measures the container's stored-instance lookup path.</p>
+</ul>
+<ul>
+<li><strong>make__reflection__cold</strong></li>
+<p>Creates a new container and calls <code>make()</code> before reflection metadata has been cached. The result is not stored as a shared service.</p>
+</ul>
+<ul>
+<li><strong>make__reflection__cached</strong></li>
+<p>Calls <code>make()</code> after the same container has already resolved the class once. This measures fresh object creation with cached reflection metadata.</p>
+</ul>
+<ul>
+<li><strong>make__registered_factory</strong></li>
+<p>Creates <code>ClassWithDeps</code> through a registered closure factory. It measures factory invocation and container dispatch without reflection-based construction.</p>
+</ul>
+<ul>
+<li><strong>get__deep_autowiring__cold</strong></li>
+<p>Creates a new container and resolves the three-level <code>ClassDeepA → ClassDeepB → ClassDeepC</code> graph for the first time.</p>
+</ul>
+<ul>
+<li><strong>get__deep_autowiring__stored</strong></li>
+<p>Returns a previously resolved <code>ClassDeepA</code> graph. This measures lookup of an already stored top-level shared instance.</p>
+</ul>
+<h3 id="run-locally">Run locally<a class="heading-anchor" href="#run-locally" aria-label="Link to this section">#</a></h3>
+<p>From the repository root:</p>
+<div class="code-block"><div class="code-label"><span>bash</span><button class="copy-code" type="button">Copy</button></div><pre><code class="language-bash">make benchmark</code></pre></div>
+<p>The command installs PHPBench into the isolated <code>tools/benchmark/vendor</code> directory and then executes all subjects. Neither benchmark dependencies nor generated lock files are committed.</p>
+<p>For meaningful comparisons, keep the PHP version, OPcache setting, hardware, and system load consistent between runs.</p></section>
 <section class="doc-source doc-guide" data-doc-source="docs/content/wordpress-plugin.md"><header class="guide-header"><p class="section-label">Extended guide</p><h2 id="wordpress-plugin">WordPress plugin<a class="heading-anchor" href="#wordpress-plugin" aria-label="Link to this guide">#</a></h2><a class="source-link" href="https://github.com/doiftrue/litewire-di/blob/main/docs/content/wordpress-plugin.md" target="_blank" rel="noreferrer">View Markdown source ↗</a></header><p>This example shows a small plugin with an admin settings page and an admin notice. It uses a container to connect the plugin classes.</p>
 <p>The example is intentionally simple. It works as a useful starting structure, not as a complete production plugin.</p>
 <h3 id="why-use-a-container-in-a-plugin">Why use a container in a plugin?<a class="heading-anchor" href="#why-use-a-container-in-a-plugin" aria-label="Link to this section">#</a></h3>
@@ -931,9 +939,10 @@ $some_service = $app-&gt;make( SomeService::class );</code></pre></div>
 			<aside class="page-toc" id="documentation-sidebar" aria-label="Documentation navigation">
 				<button class="sidebar-close" type="button" aria-label="Close documentation navigation">×</button>
 				<nav class="document-tabs" aria-label="Documentation pages">
-					<a class="is-active" href="#litewire-di-container" data-document="README.md"><span>01</span>Overview</a>
-					<a href="#wordpress-plugin" data-document="docs/content/wordpress-plugin.md"><span>02</span>WordPress plugin</a>
-					<a href="#configuration" data-document="docs/content/config-usage-example.md"><span>03</span>Configuration</a>
+					<a class="is-active" href="#litewire-di-container" data-document="docs/content/overview.md"><span>01</span>Overview</a>
+					<a href="#benchmarks" data-document="benchmarks/README.md"><span>02</span>Benchmarks</a>
+					<a href="#wordpress-plugin" data-document="docs/content/wordpress-plugin.md"><span>03</span>WordPress plugin</a>
+					<a href="#configuration" data-document="docs/content/config-usage-example.md"><span>04</span>Configuration</a>
 				</nav>
 				<div class="page-toc-sections">
 					<p>On this page</p>

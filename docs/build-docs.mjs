@@ -11,13 +11,14 @@ const startMarker = '<!-- DOCS:START -->';
 const endMarker = '<!-- DOCS:END -->';
 
 const sources = [
-	{ file: 'README.md', type: 'overview' },
+	{ file: 'docs/content/overview.md', type: 'overview' },
+	{ file: 'benchmarks/README.md', type: 'guide', title: 'Benchmarks', id: 'benchmarks', label: 'Report' },
 	{ file: 'docs/content/wordpress-plugin.md', type: 'guide', title: 'WordPress plugin', id: 'wordpress-plugin' },
 	{ file: 'docs/content/config-usage-example.md', type: 'guide', title: 'Configuration', id: 'configuration' },
 ];
 
 const usedIds = new Map();
-let activeSourceFile = 'README.md';
+let activeSourceFile = 'docs/content/overview.md';
 
 function escapeHtml( value ) {
 	return value
@@ -199,14 +200,11 @@ function renderSource( source ) {
 	markdown = markdown.replace( /[ \t]+$/gm, '' );
 
 	if ( source.type === 'overview' ) {
-		markdown = markdown.replace( /^(?:!\[[^\n]+\n)+/, '' );
-		markdown = markdown.replace( /^LiteWire DI Container\n=+\n/, '' );
-		markdown = markdown.replace( /\nTable of contents\n-+\n[\s\S]*?(?=\nDesign goals\n-+)/, '\n' );
 		return `<section class="doc-source doc-overview" data-doc-source="${ source.file }">${ renderMarkdown( markdown, 1 ) }</section>`;
 	}
 
 	markdown = markdown.replace( /^#\s+[^\n]+\n/, '' );
-	return `<section class="doc-source doc-guide" data-doc-source="${ source.file }"><header class="guide-header"><p class="section-label">Extended guide</p><h2 id="${ source.id }">${ source.title }<a class="heading-anchor" href="#${ source.id }" aria-label="Link to this guide">#</a></h2><a class="source-link" href="https://github.com/doiftrue/litewire-di/blob/main/${ source.file }" target="_blank" rel="noreferrer">View Markdown source ↗</a></header>${ renderMarkdown( markdown, 1 ) }</section>`;
+	return `<section class="doc-source doc-guide" data-doc-source="${ source.file }"><header class="guide-header"><p class="section-label">${ source.label || 'Extended guide' }</p><h2 id="${ source.id }">${ source.title }<a class="heading-anchor" href="#${ source.id }" aria-label="Link to this guide">#</a></h2><a class="source-link" href="https://github.com/doiftrue/litewire-di/blob/main/${ source.file }" target="_blank" rel="noreferrer">View Markdown source ↗</a></header>${ renderMarkdown( markdown, 1 ) }</section>`;
 }
 
 const generated = sources.map( renderSource ).join( '\n' );

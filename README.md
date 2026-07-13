@@ -181,7 +181,33 @@ Gets a shared service instance – singleton.
 If the service was already created, the same object is returned.
 
 ### get() – Autowiring 
-See basic usage above.
+
+`get()` can create an unregistered class by resolving the class dependencies declared in its constructor:
+
+```php
+class Logger {
+	public function write( string $message ): void {
+		error_log( $message );
+	}
+}
+
+class Report_Service {
+	private $logger;
+
+	public function __construct( Logger $logger ) {
+		$this->logger = $logger;
+	}
+
+	public function generate(): void {
+		$this->logger->write( 'Report generated.' );
+	}
+}
+
+$service = $container->get( Report_Service::class );
+$service->generate();
+```
+
+Neither `Report_Service` nor `Logger` needs to be registered: the container inspects both constructors and builds the complete dependency graph automatically.
 
 
 ### get() – Shared services

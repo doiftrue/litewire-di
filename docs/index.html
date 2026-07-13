@@ -242,7 +242,28 @@ $container-&gt;has( 'Unknown' );      // false</code></pre></div>
 <p>Gets a shared service instance – singleton.</p>
 <p>If the service was already created, the same object is returned.</p>
 <h4 id="get-autowiring">get() – Autowiring<a class="heading-anchor" href="#get-autowiring" aria-label="Link to this section">#</a></h4>
-<p>See basic usage above.</p>
+<p><code>get()</code> can create an unregistered class by resolving the class dependencies declared in its constructor:</p>
+<div class="code-block"><div class="code-label"><span>php</span><button class="copy-code" type="button">Copy</button></div><pre><code class="language-php">class Logger {
+	public function write( string $message ): void {
+		error_log( $message );
+	}
+}
+
+class Report_Service {
+	private $logger;
+
+	public function __construct( Logger $logger ) {
+		$this-&gt;logger = $logger;
+	}
+
+	public function generate(): void {
+		$this-&gt;logger-&gt;write( 'Report generated.' );
+	}
+}
+
+$service = $container-&gt;get( Report_Service::class );
+$service-&gt;generate();</code></pre></div>
+<p>Neither <code>Report_Service</code> nor <code>Logger</code> needs to be registered: the container inspects both constructors and builds the complete dependency graph automatically.</p>
 <h4 id="get-shared-services">get() – Shared services<a class="heading-anchor" href="#get-shared-services" aria-label="Link to this section">#</a></h4>
 <p><code>get()</code> resolves a service and stores it in the container. The next call returns the same instance.</p>
 <div class="code-block"><div class="code-label"><span>php</span><button class="copy-code" type="button">Copy</button></div><pre><code class="language-php">$a = $container-&gt;get( Some_Service::class );

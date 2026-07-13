@@ -57,7 +57,7 @@ Create `my-plugin.php`. This file loads the copied container and the plugin auto
 /**
  * Plugin Name: LiteWire DI Example
  * Description: A small plugin built with constructor injection.
- * Requires PHP: 7.4
+ * Requires PHP: 8.1
  * Version: 1.0.0
  */
  
@@ -79,7 +79,11 @@ function example_my_plugin_init(): void {
 	// The container cannot guess scalar values such as file paths and slugs.
 	$container->set(
 		PluginConfig::class,
-		new PluginConfig( __FILE__, 'litewire-di-example', 'lwdi_message' )
+		new PluginConfig( [
+			'plugin_file' => __FILE__,
+			'option_name' => 'lwdi_message',
+			'menu_slug'   => 'litewire-di-example',
+		] )
 	);
 
 	// Plugin and its remaining dependencies are created automatically.
@@ -103,16 +107,13 @@ Create `autoload.php`:
 namespace Example\MyPlugin;
 
 spl_autoload_register( static function ( string $class ): void {
-	if ( ! str_starts_with( $class, __NAMESPACE__ ) ) {
+	if ( ! str_starts_with( $class, __NAMESPACE__ . '\\' ) ) {
 		return;
 	}
 
-	$relative_class = substr( $class, strlen( __NAMESPACE__ ) );
-	$file = __DIR__ . '/src/' . str_replace( '\\', '/', $relative_class ) . '.php';
+	$path = str_replace( [ __NAMESPACE__, '\\' ], [ __DIR__ . '/src', '/' ], $class );
 
-	if ( is_file( $file ) ) {
-		require_once $file;
-	}
+	require_once "$path.php";
 } );
 ```
 
@@ -127,31 +128,16 @@ namespace Example\MyPlugin;
 
 final class PluginConfig {
 
-	private string $plugin_file;
-	private string $menu_slug;
-	private string $option_name;
+	public readonly string $plugin_file;
+	public readonly string $option_name;
+	public readonly string $menu_slug;
 
-	public function __construct(
-		string $plugin_file,
-		string $menu_slug,
-		string $option_name
-	) {
-		$this->plugin_file = $plugin_file;
-		$this->menu_slug = $menu_slug;
-		$this->option_name = $option_name;
+	public function __construct( array $config ) {
+		$this->plugin_file = $config['plugin_file'];
+		$this->option_name = $config['option_name'];
+		$this->menu_slug   = $config['menu_slug'];
 	}
-
-	public function plugin_file(): string {
-		return $this->plugin_file;
-	}
-
-	public function menu_slug(): string {
-		return $this->menu_slug;
-	}
-
-	public function option_name(): string {
-		return $this->option_name;
-	}
+	
 }
 ```
 
@@ -197,29 +183,24 @@ namespace Example\MyPlugin;
 use Example\MyPlugin\Logger\Logger;
 
 final class SettingsPage {
-	private PluginConfig $config;
-	private Logger $logger;
 
-	public function __construct( PluginConfig $config, Logger $logger ) {
-		$this->config = $config;
-		$this->logger = $logger;
+	public function __construct( 
+		private readonly PluginConfig $config, 
+		private readonly Logger $logger
+	) {
 	}
 
 	public function register_hooks(): void {
 		add_action( 'admin_menu', [ $this, 'add_page' ] );
 		add_action( 'admin_init', [ $this, 'register_setting' ] );
-		add_filter(
-			'plugin_action_links_' . plugin_basename( $this->config->plugin_file() ),
-			[ $this, 'add_action_link' ]
-		);
+		
+		$basename = plugin_basename( $this->config->plugin_file );
+		add_filter( "plugin_action_links_$basename", [ $this, 'add_action_link' ] );
 	}
 
 	public function add_action_link( array $links ): array {
-		$url = admin_url( 'options-general.php?page=' . $this->config->menu_slug() );
-		array_unshift(
-			$links,
-			'<a href="' . esc_url( $url ) . '">Settings</a>'
-		);
+		$url = admin_url( "options-general.php?page={$this->config->menu_slug}" );
+		array_unshift( $links, '<a href="' . esc_url( $url ) . '">Settings</a>' );
 
 		return $links;
 	}
@@ -229,15 +210,15 @@ final class SettingsPage {
 			'Example message',
 			'Example message',
 			'manage_options',
-			$this->config->menu_slug(),
+			$this->config->menu_slug,
 			[ $this, 'render' ]
 		);
 	}
 
 	public function register_setting(): void {
 		register_setting(
-			$this->config->menu_slug(),
-			$this->config->option_name(),
+			$this->config->menu_slug,
+			$this->config->option_name,
 			[ 'sanitize_callback' => [ $this, 'sanitize' ] ]
 		);
 	}
@@ -254,17 +235,17 @@ final class SettingsPage {
 			return;
 		}
 
-		$value = get_option( $this->config->option_name(), '' );
+		$value = get_option( $this->config->option_name, '' );
 		?>
 		<div class="wrap">
 			<h1><?php echo esc_html( get_admin_page_title() ); ?></h1>
 			<form action="options.php" method="post">
-				<?php settings_fields( $this->config->menu_slug() ); ?>
+				<?php settings_fields( $this->config->menu_slug ); ?>
 				<label for="lwdi-message">Message</label>
 				<input
 					id="lwdi-message"
 					class="regular-text"
-					name="<?php echo esc_attr( $this->config->option_name() ); ?>"
+					name="<?php echo esc_attr( $this->config->option_name ); ?>"
 					value="<?php echo esc_attr( (string) $value ); ?>"
 				>
 				<?php submit_button(); ?>
@@ -288,10 +269,9 @@ namespace Example\MyPlugin;
 
 final class AdminNotice {
 
-	private PluginConfig $config;
-
-	public function __construct( PluginConfig $config ) {
-		$this->config = $config;
+	public function __construct( 
+		private readonly PluginConfig $config
+	) {
 	}
 
 	public function register_hooks(): void {
@@ -299,7 +279,7 @@ final class AdminNotice {
 	}
 
 	public function render(): void {
-		$message = get_option( $this->config->option_name(), '' );
+		$message = get_option( $this->config->option_name, '' );
 
 		if ( ! is_string( $message ) || $message === '' ) {
 			return;
@@ -327,15 +307,10 @@ namespace Example\MyPlugin;
 
 final class Plugin {
 
-	private SettingsPage $settings_page;
-	private AdminNotice $admin_notice;
-
 	public function __construct(
-		SettingsPage $settings_page,
-		AdminNotice $admin_notice
+		private readonly SettingsPage $settings_page,
+		private readonly AdminNotice $admin_notice
 	) {
-		$this->settings_page = $settings_page;
-		$this->admin_notice = $admin_notice;
 	}
 
 	public function boot(): void {
@@ -362,9 +337,10 @@ Plugin
 For a concrete class, add it to a constructor. No bootstrap change is needed:
 
 ```php
-public function __construct( PluginConfig $config, MessageRepository $messages ) {
-	$this->config = $config;
-	$this->messages = $messages;
+public function __construct( 
+	private readonly PluginConfig $config,
+	private readonly MessageRepository $messages
+) {
 }
 ```
 
@@ -379,7 +355,11 @@ Register something only when LiteWire DI cannot decide how to create it:
 The container is object setup, not a requirement inside your classes. A unit test can create `SettingsPage` directly:
 
 ```php
-$config = new PluginConfig( '/tmp/my-plugin.php', 'test-menu', 'test-option' );
+$config = new PluginConfig( [
+	'plugin_file' => '/tmp/my-plugin.php',
+	'option_name' => 'test-option',
+	'menu_slug'   => 'test-menu',
+] );
 $logger = new FakeLogger();
 $page = new SettingsPage( $config, $logger );
 ```

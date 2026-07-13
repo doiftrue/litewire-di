@@ -675,7 +675,7 @@ $some_service = $app-&gt;make( SomeService::class );</code></pre></div>
 /**
  * Plugin Name: LiteWire DI Example
  * Description: A small plugin built with constructor injection.
- * Requires PHP: 7.4
+ * Requires PHP: 8.1
  * Version: 1.0.0
  */
 
@@ -697,7 +697,11 @@ function example_my_plugin_init(): void {
 	// The container cannot guess scalar values such as file paths and slugs.
 	$container-&gt;set(
 		PluginConfig::class,
-		new PluginConfig( __FILE__, 'litewire-di-example', 'lwdi_message' )
+		new PluginConfig( [
+			'plugin_file' =&gt; __FILE__,
+			'option_name' =&gt; 'lwdi_message',
+			'menu_slug'   =&gt; 'litewire-di-example',
+		] )
 	);
 
 	// Plugin and its remaining dependencies are created automatically.
@@ -712,16 +716,13 @@ function example_my_plugin_init(): void {
 namespace Example\MyPlugin;
 
 spl_autoload_register( static function ( string $class ): void {
-	if ( ! str_starts_with( $class, __NAMESPACE__ ) ) {
+	if ( ! str_starts_with( $class, __NAMESPACE__ . '\\' ) ) {
 		return;
 	}
 
-	$relative_class = substr( $class, strlen( __NAMESPACE__ ) );
-	$file = __DIR__ . '/src/' . str_replace( '\\', '/', $relative_class ) . '.php';
+	$path = str_replace( [ __NAMESPACE__, '\\' ], [ __DIR__ . '/src', '/' ], $class );
 
-	if ( is_file( $file ) ) {
-		require_once $file;
-	}
+	require_once &quot;$path.php&quot;;
 } );</code></pre></div>
 <h3 id="4-plugin-configuration-object">4. Plugin configuration object<a class="heading-anchor" href="#4-plugin-configuration-object" aria-label="Link to this section">#</a></h3>
 <p>Create <code>src/PluginConfig.php</code>:</p>
@@ -730,31 +731,16 @@ namespace Example\MyPlugin;
 
 final class PluginConfig {
 
-	private string $plugin_file;
-	private string $menu_slug;
-	private string $option_name;
+	public readonly string $plugin_file;
+	public readonly string $option_name;
+	public readonly string $menu_slug;
 
-	public function __construct(
-		string $plugin_file,
-		string $menu_slug,
-		string $option_name
-	) {
-		$this-&gt;plugin_file = $plugin_file;
-		$this-&gt;menu_slug = $menu_slug;
-		$this-&gt;option_name = $option_name;
+	public function __construct( array $config ) {
+		$this-&gt;plugin_file = $config['plugin_file'];
+		$this-&gt;option_name = $config['option_name'];
+		$this-&gt;menu_slug   = $config['menu_slug'];
 	}
 
-	public function plugin_file(): string {
-		return $this-&gt;plugin_file;
-	}
-
-	public function menu_slug(): string {
-		return $this-&gt;menu_slug;
-	}
-
-	public function option_name(): string {
-		return $this-&gt;option_name;
-	}
 }</code></pre></div>
 <p>A configuration object is better than asking the container for string keys. It gives the values clear names and keeps them type-safe.</p>
 <h3 id="5-logger-interface-and-implementation">5. Logger interface and implementation<a class="heading-anchor" href="#5-logger-interface-and-implementation" aria-label="Link to this section">#</a></h3>
@@ -784,29 +770,24 @@ namespace Example\MyPlugin;
 use Example\MyPlugin\Logger\Logger;
 
 final class SettingsPage {
-	private PluginConfig $config;
-	private Logger $logger;
 
-	public function __construct( PluginConfig $config, Logger $logger ) {
-		$this-&gt;config = $config;
-		$this-&gt;logger = $logger;
+	public function __construct(
+		private readonly PluginConfig $config,
+		private readonly Logger $logger
+	) {
 	}
 
 	public function register_hooks(): void {
 		add_action( 'admin_menu', [ $this, 'add_page' ] );
 		add_action( 'admin_init', [ $this, 'register_setting' ] );
-		add_filter(
-			'plugin_action_links_' . plugin_basename( $this-&gt;config-&gt;plugin_file() ),
-			[ $this, 'add_action_link' ]
-		);
+
+		$basename = plugin_basename( $this-&gt;config-&gt;plugin_file );
+		add_filter( &quot;plugin_action_links_$basename&quot;, [ $this, 'add_action_link' ] );
 	}
 
 	public function add_action_link( array $links ): array {
-		$url = admin_url( 'options-general.php?page=' . $this-&gt;config-&gt;menu_slug() );
-		array_unshift(
-			$links,
-			'&lt;a href=&quot;' . esc_url( $url ) . '&quot;&gt;Settings&lt;/a&gt;'
-		);
+		$url = admin_url( &quot;options-general.php?page={$this-&gt;config-&gt;menu_slug}&quot; );
+		array_unshift( $links, '&lt;a href=&quot;' . esc_url( $url ) . '&quot;&gt;Settings&lt;/a&gt;' );
 
 		return $links;
 	}
@@ -816,15 +797,15 @@ final class SettingsPage {
 			'Example message',
 			'Example message',
 			'manage_options',
-			$this-&gt;config-&gt;menu_slug(),
+			$this-&gt;config-&gt;menu_slug,
 			[ $this, 'render' ]
 		);
 	}
 
 	public function register_setting(): void {
 		register_setting(
-			$this-&gt;config-&gt;menu_slug(),
-			$this-&gt;config-&gt;option_name(),
+			$this-&gt;config-&gt;menu_slug,
+			$this-&gt;config-&gt;option_name,
 			[ 'sanitize_callback' =&gt; [ $this, 'sanitize' ] ]
 		);
 	}
@@ -841,17 +822,17 @@ final class SettingsPage {
 			return;
 		}
 
-		$value = get_option( $this-&gt;config-&gt;option_name(), '' );
+		$value = get_option( $this-&gt;config-&gt;option_name, '' );
 		?&gt;
 		&lt;div class=&quot;wrap&quot;&gt;
 			&lt;h1&gt;&lt;?php echo esc_html( get_admin_page_title() ); ?&gt;&lt;/h1&gt;
 			&lt;form action=&quot;options.php&quot; method=&quot;post&quot;&gt;
-				&lt;?php settings_fields( $this-&gt;config-&gt;menu_slug() ); ?&gt;
+				&lt;?php settings_fields( $this-&gt;config-&gt;menu_slug ); ?&gt;
 				&lt;label for=&quot;lwdi-message&quot;&gt;Message&lt;/label&gt;
 				&lt;input
 					id=&quot;lwdi-message&quot;
 					class=&quot;regular-text&quot;
-					name=&quot;&lt;?php echo esc_attr( $this-&gt;config-&gt;option_name() ); ?&gt;&quot;
+					name=&quot;&lt;?php echo esc_attr( $this-&gt;config-&gt;option_name ); ?&gt;&quot;
 					value=&quot;&lt;?php echo esc_attr( (string) $value ); ?&gt;&quot;
 				&gt;
 				&lt;?php submit_button(); ?&gt;
@@ -869,10 +850,9 @@ namespace Example\MyPlugin;
 
 final class AdminNotice {
 
-	private PluginConfig $config;
-
-	public function __construct( PluginConfig $config ) {
-		$this-&gt;config = $config;
+	public function __construct(
+		private readonly PluginConfig $config
+	) {
 	}
 
 	public function register_hooks(): void {
@@ -880,7 +860,7 @@ final class AdminNotice {
 	}
 
 	public function render(): void {
-		$message = get_option( $this-&gt;config-&gt;option_name(), '' );
+		$message = get_option( $this-&gt;config-&gt;option_name, '' );
 
 		if ( ! is_string( $message ) || $message === '' ) {
 			return;
@@ -940,7 +920,11 @@ final class Plugin {
 </ul>
 <h3 id="testing-a-class-without-the-container">Testing a class without the container<a class="heading-anchor" href="#testing-a-class-without-the-container" aria-label="Link to this section">#</a></h3>
 <p>The container is object setup, not a requirement inside your classes. A unit test can create <code>SettingsPage</code> directly:</p>
-<div class="code-block"><div class="code-label"><span>php</span><button class="copy-code" type="button">Copy</button></div><pre><code class="language-php">$config = new PluginConfig( '/tmp/my-plugin.php', 'test-menu', 'test-option' );
+<div class="code-block"><div class="code-label"><span>php</span><button class="copy-code" type="button">Copy</button></div><pre><code class="language-php">$config = new PluginConfig( [
+	'plugin_file' =&gt; '/tmp/my-plugin.php',
+	'option_name' =&gt; 'test-option',
+	'menu_slug'   =&gt; 'test-menu',
+] );
 $logger = new FakeLogger();
 $page = new SettingsPage( $config, $logger );</code></pre></div>
 <p>This is the main reason to keep dependencies in constructors: they are easy to see and easy to replace in tests.</p></section>

@@ -1,30 +1,30 @@
 # LiteWire DI Container
 
-A tiny single-file autowire DI container for PHP and WordPress applications.
+A tiny single-file autowiring DI container for PHP and WordPress.
 
 
 Compatibility
 -------------
 
-LiteWire DI supports PHP 7.4 and every PHP 8 minor release from 8.0 through 8.5. Each supported version is tested by CI. Future PHP versions are added after compatibility has been verified.
+PHP 7.4 and PHP 8.0-8.5 are tested in CI.
 
 
 Design goals
 ------------
-This container is intentionally small. It is designed for small projects, plugins, themes, and libraries where a full-featured container like Symfony DI or PHP-DI would be too much.
+LiteWire DI is built for small projects, plugins, themes, and libraries where Symfony DI or PHP-DI would be too much.
 
-It is not trying to replace Symfony DI, PHP-DI, Laravel Container, or other full-featured dependency injection containers. It is useful when you need simple autowiring without configuration files, compiled cache, service providers, tags, scopes, scalar parameter storage, or framework integration.
+It is not a replacement for large framework containers. It is for simple autowiring without config files, compiled cache, service providers, tags, scopes, scalar storage, or framework integration.
 
-The main idea is to provide a PSR-11-style API built around `get()` and `has()`:
+The API follows the familiar `get()` / `has()` shape:
 
 ```php
 $container->get( Service::class );
 $container->has( Service::class );
 ```
 
-For larger projects, this makes migration to a bigger container easier.
+That keeps migration to a larger container straightforward.
 
-The container does not implement `Psr\Container\ContainerInterface` and does not depend on `psr/container`.
+It does not implement `Psr\Container\ContainerInterface` and does not require `psr/container`.
 
 
 Features
@@ -45,21 +45,21 @@ Features
 - Cache Reflection data inside each container instance.
 - Detect circular dependencies and show the full resolution chain.
 
-Partially supported features:
+Tradeoffs:
 
-- Services can receive configuration through factories, runtime parameters, or a registered configuration object, but the container does not have a separate configuration array.
-- Invokable objects can be wrapped in a closure, but objects with `__invoke()` are not treated as factories automatically.
-- The container uses normal PHP code for configuration. It does not provide attributes or a special configuration language.
+- Configuration goes through factories, runtime parameters, or config objects. There is no separate config array.
+- Invokable objects can be wrapped in closures, but are not factories automatically.
+- Configuration is normal PHP code. There are no attributes or DSL.
 
 
 Usage Guide
 -----------
-LiteWire DI has four public methods:
+Four public methods:
 
-- `has()` checks if a service can be loaded.
-- `set()` tells the container how to create an object.
-- `get()` returns a shared object and creates it if it does not exist yet.
-- `make()` creates a new object.
+- `has()` checks if a service can be resolved.
+- `set()` registers an object, class, or factory.
+- `get()` returns a shared object.
+- `make()` creates a fresh object.
 
 API:
 ```php
@@ -69,12 +69,12 @@ $container->get( class-string $id );
 $container->make( class-string $id, array $parameters = [] );
 ```
 
-All service IDs must be real class or interface names. Plain names such as `logger` are not supported.
+Service IDs must be class or interface names. Plain strings like `logger` are not supported.
 
 
-Basic usage
------------
-`Logger` will be created automatically because it is declared as a constructor dependency.
+### Usage Example
+
+`Logger` is created automatically from the constructor type.
 
 ```php
 class Logger {
@@ -99,27 +99,12 @@ $service->run();
 ```
 
 
-WordPress example:
-
-```php
-$container = new Container();
-
-// Register factory for Plugin class
-$container->set( Plugin::class, function () {
-	return new Plugin( __FILE__ );
-} );
-
-add_action( 'plugins_loaded', function () use ( $container ) {
-	$container->get( Plugin::class )->init();
-} );
-```
-
 
 has()
 -----
-Checks whether the service was registered, already resolved, or can be autowired.
+Checks whether a service is registered, already resolved, or autowireable.
 
-For an unregistered class, its constructor and complete dependency graph must be valid.
+For an unregistered class, the full constructor graph must be valid.
 
 Usage:
 ```php
@@ -130,13 +115,13 @@ $container->has( 'Unknown' );      // false
 
 get()
 -----
-Gets a shared service instance.
+Returns a shared service instance.
 
-If the service was already created, the same object is returned.
+If it was already created, the same object is returned.
 
 ### get() - Autowiring
 
-`get()` can create an unregistered class by resolving the class dependencies declared in its constructor:
+`get()` can create an unregistered class from constructor types:
 
 ```php
 class Logger {
@@ -161,12 +146,12 @@ $service = $container->get( Report_Service::class );
 $service->generate();
 ```
 
-Neither `Report_Service` nor `Logger` needs to be registered: the container inspects both constructors and builds the complete dependency graph automatically.
+Neither `Report_Service` nor `Logger` needs registration. The container builds the graph automatically.
 
 
 ### get() - Shared services
 
-`get()` resolves a service and stores it in the container. The next call returns the same instance.
+`get()` stores the resolved service. The next call returns the same instance.
 
 ```php
 $a = $container->get( Some_Service::class );
@@ -177,7 +162,7 @@ var_dump( $a === $b ); // true
 
 ### get() - Scalar values
 
-Required scalar values cannot be resolved automatically. `ContainerException` will be thrown.
+Required scalar values cannot be autowired. They throw `ContainerException`.
 
 ```php
 final class Config {
@@ -212,7 +197,7 @@ set()
 -----
 Registers a service definition.
 
-Service IDs must be existing class/interface names. Regular strings are not supported:
+Service IDs must be class or interface names. Regular strings are not supported:
 
 ```php
 $container->set( Logger_Interface::class, File_Logger::class ); // valid
@@ -226,7 +211,7 @@ Accepted values:
 * closure factory - `static fn () => new MyClass()`
 
 > [!IMPORTANT]
-> Configure the container before the first call to `get()`. Replacing a definition with `set()` removes the stored instance for that ID, but does not rebuild other shared services that were already created with the previous instance as a dependency.
+> Configure the container before the first `get()`. Replacing a definition removes the stored instance for that ID, but already-created services are not rebuilt.
 
 
 ### set() - Register an existing object
@@ -266,7 +251,7 @@ $shared_mailer = $container->get( Mailer::class );
 $fresh_mailer = $container->make( Mailer::class );
 ```
 
-Type-hint `Container` in factory parameters to receive the container:
+Type-hint `Container` in a factory parameter to receive the container:
 
 ```php
 $container->set( Plugin::class, static function ( Container $container ) {
@@ -279,25 +264,13 @@ $plugin = $container->get( Plugin::class );
 
 make()
 ------
-Creates a fresh object each time from a registered definition or class name.
+Creates a fresh object from a registered definition or class name.
 
-Unlike `get()`, it does not store the created object in the container.
-
-> [!NOTE]
-> Definitions registered as existing object instances cannot be used with `make()` - use `get()` to retrieve those instances.
-
-> [!NOTE]
-> Only the requested root object is created anew. Missing class dependencies are resolved through `get()`, so those dependencies are shared and reused by subsequent calls.
-
-> [!NOTE]
-> Class-string definitions are instantiated again, and closure factories are invoked on every call.
-
-> [!NOTE]
-> Factories must return an object but are responsible for whether that object is a new instance.
+Unlike `get()`, it does not store the object.
 
 
 ### make() - New instances
-`make()` creates a new object and does not save it in the container.
+`make()` creates a new object without saving it.
 
 ```php
 $a = $container->make( Some_Service::class );
@@ -310,11 +283,11 @@ This is useful for stateful objects, DTOs, handlers, commands, forms, and other 
 
 
 ### make() - Runtime parameters
-The second argument of `make()` is an array of constructor parameters, keyed by parameter name. Values provided in this array are passed directly to the constructor. Any missing class dependencies are resolved automatically by the container.
+The second argument of `make()` is an array keyed by constructor parameter name. Provided values go straight to the constructor. Missing class dependencies are autowired.
 
-If the array contains a parameter name that does not exist in the constructor, `make()` throws a `ContainerException`.
+Unknown parameter names throw `ContainerException`.
 
-This allows `make()` to be used as a factory for objects that combine autowired services with runtime values. The factory call can then be replaced with a mock in tests.
+This makes `make()` useful for objects that mix services with runtime values. In tests, the factory call can be replaced with a mock.
 
 ```php
 class Mailer {
@@ -330,10 +303,45 @@ $mailer = $container->make( Mailer::class, [
 ```
 
 
-Performance
------------
+### make() - Existing object definitions
+Definitions registered as existing object instances cannot be used with `make()`. Use `get()` to retrieve those instances.
 
-The detailed benchmark report is available in the [Benchmarks](#benchmarks) section.
+```php
+$logger = new Logger();
+
+$container->set( Logger::class, $logger );
+
+$same_logger = $container->get( Logger::class ); // OK.
+$new_logger = $container->make( Logger::class ); // Throws ContainerException.
+```
+
+
+### make() - Shared dependencies
+Only the requested root object is created anew. Class dependencies are resolved with `get()`, so they are shared and reused by subsequent calls.
+
+```php
+class ReportController {
+	public function __construct( public Logger $logger ) {}
+}
+
+$first = $container->make( ReportController::class );
+$second = $container->make( ReportController::class );
+
+var_dump( $first === $second ); // false
+var_dump( $first->logger === $second->logger ); // true
+```
+
+
+### make() - Registered definitions
+Class-string definitions are instantiated again, and closure factories are invoked on every call.
+
+```php
+$container->set( Mailer::class, static fn () => new Mailer() );
+
+var_dump( $container->make( Mailer::class ) === $container->make( Mailer::class ) ); // false
+var_dump( $container->get( Mailer::class ) === $container->get( Mailer::class ) ); // true
+```
+
 
 
 Comparison with other containers
@@ -366,7 +374,7 @@ Best for:
 
 Limitations
 -----------
-LiteWire DI intentionally does not include:
+LiteWire DI does not include:
 
 - A compiled container.
 - Complex configuration files.
@@ -382,8 +390,8 @@ LiteWire DI intentionally does not include:
 - Union or intersection type resolution.
 - Variadic parameter resolution.
 
-Required scalar constructor parameters must be provided manually.
+Required scalar constructor parameters must be provided by your code.
 
-These features would make the public API larger and less focused. The main advantage of LiteWire DI is its strict object model in one small PHP file.
+These features would make the API larger. LiteWire DI keeps one strict object model in one small PHP file.
 
-Full PSR-11 support is also a tradeoff because it requires a dependency on `psr/container`. LiteWire DI keeps a PSR-11-style API instead. A separate optional adapter may be added in the future.
+Full PSR-11 support would require `psr/container`. LiteWire DI keeps the API style without the dependency. An optional adapter may be added later.

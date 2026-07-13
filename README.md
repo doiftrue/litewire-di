@@ -8,9 +8,9 @@
 LiteWire DI Container
 =====================
 
-A tiny single-file autowire DI container for PHP and WordPress applications.
+A tiny single-file autowiring DI container for PHP and WordPress.
 
-LiteWire DI is designed for small projects, plugins, themes, and libraries where a full-featured container like Symfony DI or PHP-DI would be too much. It gives you a PSR-11-style API around `get()` and `has()` without requiring `psr/container` or any other runtime dependency.
+Use it when Symfony DI, PHP-DI, or a framework container feels too heavy. You get a familiar `get()` / `has()` API, autowiring, factories, shared services, and no runtime dependencies.
 
 Full documentation: https://doiftrue.github.io/litewire-di/
 
@@ -30,7 +30,7 @@ Or copy the single [`Container.php`](Container.php) file into your project.
 Compatibility
 -------------
 
-LiteWire DI supports PHP 7.4 and every PHP 8 minor release from 8.0 through 8.5. Each supported version is tested by CI. Future PHP versions are added after compatibility has been verified.
+PHP 7.4 and PHP 8.0-8.5 are tested in CI.
 
 
 Features
@@ -45,12 +45,33 @@ Features
 - Pass named runtime parameters to `make()`.
 - Check whether classes and interfaces can be resolved with `has()`.
 - Detect circular dependencies and show the full resolution chain.
+- Use an object-first design with class and interface names as service IDs.
 
 
-Quick start
------------
+API
+---
 
-`Logger` is created automatically because it is declared as a constructor dependency.
+Four public methods:
+
+- `has()` checks if a service can be resolved.
+- `set()` registers an object, class, or factory.
+- `get()` returns a shared object.
+- `make()` creates a fresh object.
+
+```php
+$container->has( class-string $id ): bool;
+$container->set( class-string $id, object|Closure|class-string $service ): void;
+$container->get( class-string $id );
+$container->make( class-string $id, array $parameters = [] );
+```
+
+Service IDs must be class or interface names. Plain strings like `logger` are not supported.
+
+
+Examples
+--------
+
+### Quick start
 
 ```php
 use Kama\LiteWireDI\Container;
@@ -73,32 +94,9 @@ final class Service {
 
 $container = new Container();
 $service = $container->get( Service::class );
-$service->run();
+$service->run(); // Logger is created automatically
 ```
 
-
-API
----
-
-LiteWire DI has four public methods:
-
-- `has()` checks if a service can be loaded.
-- `set()` tells the container how to create an object.
-- `get()` returns a shared object and creates it if it does not exist yet.
-- `make()` creates a fresh object.
-
-```php
-$container->has( class-string $id ): bool;
-$container->set( class-string $id, object|Closure|class-string $service ): void;
-$container->get( class-string $id );
-$container->make( class-string $id, array $parameters = [] );
-```
-
-All service IDs must be real class or interface names. Plain names such as `logger` are not supported.
-
-
-Examples
---------
 
 ### Interface binding
 
@@ -110,7 +108,7 @@ $logger = $container->get( Logger_Interface::class );
 
 ### Factory registration
 
-Factories must return an object. Factory parameters are autowired in the same way as constructor parameters.
+Factories must return an object. Their parameters are autowired too.
 
 ```php
 $container->set( Mailer::class, static function ( Logger $logger ) {
@@ -123,7 +121,7 @@ $fresh_mailer = $container->make( Mailer::class );
 
 ### Runtime parameters
 
-`make()` creates a fresh root object and accepts constructor values keyed by parameter name.
+`make()` creates a fresh root object and accepts named constructor values.
 
 ```php
 final class Mailer {
@@ -150,9 +148,9 @@ Documentation
 
 Benchmarks
 ----------
-Performance benchmarks cover direct instantiation, cold and stored `get()`, cold and reflection-cached `make()`, factory invocation, and both cold and stored deep autowiring.
+Benchmarks cover direct `new`, `get()`, `make()`, factories, and deep autowiring.
 
-Benchmark results depend on the machine and PHP version. Compare changes in the same environment rather than treating individual timings as universal limits.
+Treat timings as local numbers, not universal limits.
 
 Results for PHP 8.5.5 (with OPcache enabled):
 
@@ -178,9 +176,9 @@ Legend:
 
 Conclusions:
 
-Unlike larger containers such as PHP-DI, LiteWire DI does not keep a compiled container between requests. According to this benchmark, it would save only about 0.121 ms for 100 objects or 1.21 ms for 1,000. For small applications, this is usually too little to justify compilation, cache files, and cache invalidation.
+LiteWire DI does not compile a container between requests. In this benchmark, compilation would save about 0.121 ms for 100 objects or 1.21 ms for 1,000 objects.
 
-A compiled container may still help large applications with thousands of services. LiteWire DI instead favors simpler setup and predictable runtime behavior for smaller dependency graphs.
+That can matter for large apps. For small dependency graphs, LiteWire DI favors simple setup and predictable runtime behavior.
 
 * Reflection caching makes `make()` about 2.5× faster.
 * A registered factory is about 1.8× faster than cached reflection.
@@ -192,7 +190,7 @@ See: [Detailed benchmark results](benchmarks/README.md)
 Limitations
 -----------
 
-LiteWire DI intentionally keeps the public API small. It does not include a compiled container, service providers, scopes, tags, scalar parameter storage, arbitrary string service IDs, or configuration files. Required scalar constructor parameters must be provided manually, usually through factories, runtime parameters, or a registered configuration object.
+LiteWire DI keeps the API small. There is no compiled container, service providers, scopes, tags, scalar storage, string service IDs, or config format. Pass required scalar values with factories, `make()` parameters, or a config object.
 
 See the [full documentation](https://doiftrue.github.io/litewire-di/#limitations) for the detailed list.
 
@@ -214,4 +212,3 @@ LiteWire DI keeps the same single-file, dependency-free approach, but uses a str
 1. Factory results are validated: returning a primitive, array, or `null` throws a `ContainerException`.
 1. Circular dependencies are detected and reported with the resolution chain.
 1. Invalid or unsupported definitions and parameters fail with explicit exceptions.
-

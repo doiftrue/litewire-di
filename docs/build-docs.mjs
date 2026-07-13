@@ -12,7 +12,7 @@ const endMarker = '<!-- DOCS:END -->';
 
 const sources = [
 	{ file: 'docs/content/overview.md', type: 'overview' },
-	{ file: 'benchmarks/README.md', type: 'guide', title: 'Benchmarks', id: 'benchmarks', label: 'Report' },
+	{ file: 'benchmarks/README.md', type: 'guide', title: 'Benchmarks', id: 'benchmarks', label: 'Report', omitSections: [ 'Run locally' ] },
 	{ file: 'docs/content/wordpress-plugin.md', type: 'guide', title: 'WordPress plugin', id: 'wordpress-plugin' },
 	{ file: 'docs/content/config-usage-example.md', type: 'guide', title: 'Configuration', id: 'configuration' },
 ];
@@ -76,6 +76,11 @@ function isTableSeparator( line ) {
 
 function tableCells( line ) {
 	return line.replace( /^\||\|$/g, '' ).split( '|' ).map( ( cell ) => cell.trim() );
+}
+
+function removeSection( markdown, heading ) {
+	const pattern = new RegExp( `\\n## ${ heading.replace( /[.*+?^${}()|[\]\\]/g, '\\$&' ) }\\n[\\s\\S]*?(?=\\n## |$)`, 'g' );
+	return markdown.replace( pattern, '' );
 }
 
 function renderMarkdown( markdown, headingOffset = 0 ) {
@@ -201,6 +206,12 @@ function renderSource( source ) {
 
 	if ( source.type === 'overview' ) {
 		return `<section class="doc-source doc-overview" data-doc-source="${ source.file }">${ renderMarkdown( markdown, 1 ) }</section>`;
+	}
+
+	if ( source.omitSections ) {
+		source.omitSections.forEach( ( heading ) => {
+			markdown = removeSection( markdown, heading );
+		} );
 	}
 
 	markdown = markdown.replace( /^#\s+[^\n]+\n/, '' );

@@ -140,17 +140,17 @@ $service = $container-&gt;get( Service::class );</code></pre>
 				<!-- Generated from docs/content/*.md and benchmarks/README.md by docs/build-docs.mjs. -->
 				<!-- DOCS:START -->
 <section class="doc-source doc-overview" data-doc-source="docs/content/overview.md"><h2 id="litewire-di-container">LiteWire DI Container<a class="heading-anchor" href="#litewire-di-container" aria-label="Link to this section">#</a></h2>
-<p>A tiny single-file autowire DI container for PHP and WordPress applications.</p>
+<p>A tiny single-file autowiring DI container for PHP and WordPress.</p>
 <h3 id="compatibility">Compatibility<a class="heading-anchor" href="#compatibility" aria-label="Link to this section">#</a></h3>
-<p>LiteWire DI supports PHP 7.4 and every PHP 8 minor release from 8.0 through 8.5. Each supported version is tested by CI. Future PHP versions are added after compatibility has been verified.</p>
+<p>PHP 7.4 and PHP 8.0-8.5 are tested in CI.</p>
 <h3 id="design-goals">Design goals<a class="heading-anchor" href="#design-goals" aria-label="Link to this section">#</a></h3>
-<p>This container is intentionally small. It is designed for small projects, plugins, themes, and libraries where a full-featured container like Symfony DI or PHP-DI would be too much.</p>
-<p>It is not trying to replace Symfony DI, PHP-DI, Laravel Container, or other full-featured dependency injection containers. It is useful when you need simple autowiring without configuration files, compiled cache, service providers, tags, scopes, scalar parameter storage, or framework integration.</p>
-<p>The main idea is to provide a PSR-11-style API built around <code>get()</code> and <code>has()</code>:</p>
+<p>LiteWire DI is built for small projects, plugins, themes, and libraries where Symfony DI or PHP-DI would be too much.</p>
+<p>It is not a replacement for large framework containers. It is for simple autowiring without config files, compiled cache, service providers, tags, scopes, scalar storage, or framework integration.</p>
+<p>The API follows the familiar <code>get()</code> / <code>has()</code> shape:</p>
 <div class="code-block"><div class="code-label"><span>php</span><button class="copy-code" type="button">Copy</button></div><pre><code class="language-php">$container-&gt;get( Service::class );
 $container-&gt;has( Service::class );</code></pre></div>
-<p>For larger projects, this makes migration to a bigger container easier.</p>
-<p>The container does not implement <code>Psr\Container\ContainerInterface</code> and does not depend on <code>psr/container</code>.</p>
+<p>That keeps migration to a larger container straightforward.</p>
+<p>It does not implement <code>Psr\Container\ContainerInterface</code> and does not require <code>psr/container</code>.</p>
 <h3 id="features">Features<a class="heading-anchor" href="#features" aria-label="Link to this section">#</a></h3>
 <ul>
 <li>Keep the whole container in a single PHP file.</li>
@@ -168,28 +168,28 @@ $container-&gt;has( Service::class );</code></pre></div>
 <li>Cache Reflection data inside each container instance.</li>
 <li>Detect circular dependencies and show the full resolution chain.</li>
 </ul>
-<p>Partially supported features:</p>
+<p>Tradeoffs:</p>
 <ul>
-<li>Services can receive configuration through factories, runtime parameters, or a registered configuration object, but the container does not have a separate configuration array.</li>
-<li>Invokable objects can be wrapped in a closure, but objects with <code>__invoke()</code> are not treated as factories automatically.</li>
-<li>The container uses normal PHP code for configuration. It does not provide attributes or a special configuration language.</li>
+<li>Configuration goes through factories, runtime parameters, or config objects. There is no separate config array.</li>
+<li>Invokable objects can be wrapped in closures, but are not factories automatically.</li>
+<li>Configuration is normal PHP code. There are no attributes or DSL.</li>
 </ul>
 <h3 id="usage-guide">Usage Guide<a class="heading-anchor" href="#usage-guide" aria-label="Link to this section">#</a></h3>
-<p>LiteWire DI has four public methods:</p>
+<p>Four public methods:</p>
 <ul>
-<li><code>has()</code> checks if a service can be loaded.</li>
-<li><code>set()</code> tells the container how to create an object.</li>
-<li><code>get()</code> returns a shared object and creates it if it does not exist yet.</li>
-<li><code>make()</code> creates a new object.</li>
+<li><code>has()</code> checks if a service can be resolved.</li>
+<li><code>set()</code> registers an object, class, or factory.</li>
+<li><code>get()</code> returns a shared object.</li>
+<li><code>make()</code> creates a fresh object.</li>
 </ul>
 <p>API:</p>
 <div class="code-block"><div class="code-label"><span>php</span><button class="copy-code" type="button">Copy</button></div><pre><code class="language-php">$container-&gt;has( class-string $id ): bool;
 $container-&gt;set( class-string $id, object|Closure|class-string $service ): void;
 $container-&gt;get( class-string $id );
 $container-&gt;make( class-string $id, array $parameters = [] );</code></pre></div>
-<p>All service IDs must be real class or interface names. Plain names such as <code>logger</code> are not supported.</p>
-<h3 id="basic-usage">Basic usage<a class="heading-anchor" href="#basic-usage" aria-label="Link to this section">#</a></h3>
-<p><code>Logger</code> will be created automatically because it is declared as a constructor dependency.</p>
+<p>Service IDs must be class or interface names. Plain strings like <code>logger</code> are not supported.</p>
+<h4 id="usage-example">Usage Example<a class="heading-anchor" href="#usage-example" aria-label="Link to this section">#</a></h4>
+<p><code>Logger</code> is created automatically from the constructor type.</p>
 <div class="code-block"><div class="code-label"><span>php</span><button class="copy-code" type="button">Copy</button></div><pre><code class="language-php">class Logger {
 	public function log( string $message ): void {
 		error_log( $message );
@@ -209,28 +209,17 @@ class Service {
 $container = new Container();
 $service = $container-&gt;get( Service::class );
 $service-&gt;run();</code></pre></div>
-<p>WordPress example:</p>
-<div class="code-block"><div class="code-label"><span>php</span><button class="copy-code" type="button">Copy</button></div><pre><code class="language-php">$container = new Container();
-
-// Register factory for Plugin class
-$container-&gt;set( Plugin::class, function () {
-	return new Plugin( __FILE__ );
-} );
-
-add_action( 'plugins_loaded', function () use ( $container ) {
-	$container-&gt;get( Plugin::class )-&gt;init();
-} );</code></pre></div>
 <h3 id="has">has()<a class="heading-anchor" href="#has" aria-label="Link to this section">#</a></h3>
-<p>Checks whether the service was registered, already resolved, or can be autowired.</p>
-<p>For an unregistered class, its constructor and complete dependency graph must be valid.</p>
+<p>Checks whether a service is registered, already resolved, or autowireable.</p>
+<p>For an unregistered class, the full constructor graph must be valid.</p>
 <p>Usage:</p>
 <div class="code-block"><div class="code-label"><span>php</span><button class="copy-code" type="button">Copy</button></div><pre><code class="language-php">$container-&gt;has( Service::class ); // true if registered, resolved, or autowireable
 $container-&gt;has( 'Unknown' );      // false</code></pre></div>
 <h3 id="get">get()<a class="heading-anchor" href="#get" aria-label="Link to this section">#</a></h3>
-<p>Gets a shared service instance.</p>
-<p>If the service was already created, the same object is returned.</p>
+<p>Returns a shared service instance.</p>
+<p>If it was already created, the same object is returned.</p>
 <h4 id="get-autowiring">get() - Autowiring<a class="heading-anchor" href="#get-autowiring" aria-label="Link to this section">#</a></h4>
-<p><code>get()</code> can create an unregistered class by resolving the class dependencies declared in its constructor:</p>
+<p><code>get()</code> can create an unregistered class from constructor types:</p>
 <div class="code-block"><div class="code-label"><span>php</span><button class="copy-code" type="button">Copy</button></div><pre><code class="language-php">class Logger {
 	public function write( string $message ): void {
 		error_log( $message );
@@ -251,15 +240,15 @@ class Report_Service {
 
 $service = $container-&gt;get( Report_Service::class );
 $service-&gt;generate();</code></pre></div>
-<p>Neither <code>Report_Service</code> nor <code>Logger</code> needs to be registered: the container inspects both constructors and builds the complete dependency graph automatically.</p>
+<p>Neither <code>Report_Service</code> nor <code>Logger</code> needs registration. The container builds the graph automatically.</p>
 <h4 id="get-shared-services">get() - Shared services<a class="heading-anchor" href="#get-shared-services" aria-label="Link to this section">#</a></h4>
-<p><code>get()</code> resolves a service and stores it in the container. The next call returns the same instance.</p>
+<p><code>get()</code> stores the resolved service. The next call returns the same instance.</p>
 <div class="code-block"><div class="code-label"><span>php</span><button class="copy-code" type="button">Copy</button></div><pre><code class="language-php">$a = $container-&gt;get( Some_Service::class );
 $b = $container-&gt;get( Some_Service::class );
 
 var_dump( $a === $b ); // true</code></pre></div>
 <h4 id="get-scalar-values">get() - Scalar values<a class="heading-anchor" href="#get-scalar-values" aria-label="Link to this section">#</a></h4>
-<p>Required scalar values cannot be resolved automatically. <code>ContainerException</code> will be thrown.</p>
+<p>Required scalar values cannot be autowired. They throw <code>ContainerException</code>.</p>
 <div class="code-block"><div class="code-label"><span>php</span><button class="copy-code" type="button">Copy</button></div><pre><code class="language-php">final class Config {
 	public function __construct(
 		private string $path
@@ -281,7 +270,7 @@ $container-&gt;get( Config::class ); // ContainerException</code></pre></div>
 $config = $container-&gt;get( Config::class ); // no error</code></pre></div>
 <h3 id="set">set()<a class="heading-anchor" href="#set" aria-label="Link to this section">#</a></h3>
 <p>Registers a service definition.</p>
-<p>Service IDs must be existing class/interface names. Regular strings are not supported:</p>
+<p>Service IDs must be class or interface names. Regular strings are not supported:</p>
 <div class="code-block"><div class="code-label"><span>php</span><button class="copy-code" type="button">Copy</button></div><pre><code class="language-php">$container-&gt;set( Logger_Interface::class, File_Logger::class ); // valid
 $container-&gt;set( 'logger', File_Logger::class );                // InvalidArgumentException</code></pre></div>
 <p>Accepted values:</p>
@@ -290,7 +279,7 @@ $container-&gt;set( 'logger', File_Logger::class );                // InvalidArg
 <li>existing class name - <code>MyClass::class</code></li>
 <li>closure factory - <code>static fn () =&gt; new MyClass()</code></li>
 </ul>
-<aside class="callout important"><strong>Important</strong><p>Configure the container before the first call to <code>get()</code>. Replacing a definition with <code>set()</code> removes the stored instance for that ID, but does not rebuild other shared services that were already created with the previous instance as a dependency.</p></aside>
+<aside class="callout important"><strong>Important</strong><p>Configure the container before the first <code>get()</code>. Replacing a definition removes the stored instance for that ID, but already-created services are not rebuilt.</p></aside>
 <h4 id="set-register-an-existing-object">set() - Register an existing object<a class="heading-anchor" href="#set-register-an-existing-object" aria-label="Link to this section">#</a></h4>
 <div class="code-block"><div class="code-label"><span>php</span><button class="copy-code" type="button">Copy</button></div><pre><code class="language-php">$container-&gt;set( Logger::class, $logger );
 $service = $container-&gt;get( Service::class );</code></pre></div>
@@ -312,30 +301,26 @@ $client = $container-&gt;get( Client::class );</code></pre></div>
 
 $shared_mailer = $container-&gt;get( Mailer::class );
 $fresh_mailer = $container-&gt;make( Mailer::class );</code></pre></div>
-<p>Type-hint <code>Container</code> in factory parameters to receive the container:</p>
+<p>Type-hint <code>Container</code> in a factory parameter to receive the container:</p>
 <div class="code-block"><div class="code-label"><span>php</span><button class="copy-code" type="button">Copy</button></div><pre><code class="language-php">$container-&gt;set( Plugin::class, static function ( Container $container ) {
 	return new Plugin( $container-&gt;get( Config::class ) );
 } );
 
 $plugin = $container-&gt;get( Plugin::class );</code></pre></div>
 <h3 id="make">make()<a class="heading-anchor" href="#make" aria-label="Link to this section">#</a></h3>
-<p>Creates a fresh object each time from a registered definition or class name.</p>
-<p>Unlike <code>get()</code>, it does not store the created object in the container.</p>
-<aside class="callout note"><strong>Note</strong><p>Definitions registered as existing object instances cannot be used with <code>make()</code> - use <code>get()</code> to retrieve those instances.</p></aside>
-<aside class="callout note"><strong>Note</strong><p>Only the requested root object is created anew. Missing class dependencies are resolved through <code>get()</code>, so those dependencies are shared and reused by subsequent calls.</p></aside>
-<aside class="callout note"><strong>Note</strong><p>Class-string definitions are instantiated again, and closure factories are invoked on every call.</p></aside>
-<aside class="callout note"><strong>Note</strong><p>Factories must return an object but are responsible for whether that object is a new instance.</p></aside>
+<p>Creates a fresh object from a registered definition or class name.</p>
+<p>Unlike <code>get()</code>, it does not store the object.</p>
 <h4 id="make-new-instances">make() - New instances<a class="heading-anchor" href="#make-new-instances" aria-label="Link to this section">#</a></h4>
-<p><code>make()</code> creates a new object and does not save it in the container.</p>
+<p><code>make()</code> creates a new object without saving it.</p>
 <div class="code-block"><div class="code-label"><span>php</span><button class="copy-code" type="button">Copy</button></div><pre><code class="language-php">$a = $container-&gt;make( Some_Service::class );
 $b = $container-&gt;make( Some_Service::class );
 
 var_dump( $a === $b ); // false</code></pre></div>
 <p>This is useful for stateful objects, DTOs, handlers, commands, forms, and other short-lived objects.</p>
 <h4 id="make-runtime-parameters">make() - Runtime parameters<a class="heading-anchor" href="#make-runtime-parameters" aria-label="Link to this section">#</a></h4>
-<p>The second argument of <code>make()</code> is an array of constructor parameters, keyed by parameter name. Values provided in this array are passed directly to the constructor. Any missing class dependencies are resolved automatically by the container.</p>
-<p>If the array contains a parameter name that does not exist in the constructor, <code>make()</code> throws a <code>ContainerException</code>.</p>
-<p>This allows <code>make()</code> to be used as a factory for objects that combine autowired services with runtime values. The factory call can then be replaced with a mock in tests.</p>
+<p>The second argument of <code>make()</code> is an array keyed by constructor parameter name. Provided values go straight to the constructor. Missing class dependencies are autowired.</p>
+<p>Unknown parameter names throw <code>ContainerException</code>.</p>
+<p>This makes <code>make()</code> useful for objects that mix services with runtime values. In tests, the factory call can be replaced with a mock.</p>
 <div class="code-block"><div class="code-label"><span>php</span><button class="copy-code" type="button">Copy</button></div><pre><code class="language-php">class Mailer {
 	public function __construct(
 		private Logger $logger,
@@ -346,8 +331,31 @@ var_dump( $a === $b ); // false</code></pre></div>
 $mailer = $container-&gt;make( Mailer::class, [
 	'from' =&gt; 'admin@example.com',
 ] );</code></pre></div>
-<h3 id="performance">Performance<a class="heading-anchor" href="#performance" aria-label="Link to this section">#</a></h3>
-<p>The detailed benchmark report is available in the <a href="#benchmarks">Benchmarks</a> section.</p>
+<h4 id="make-existing-object-definitions">make() - Existing object definitions<a class="heading-anchor" href="#make-existing-object-definitions" aria-label="Link to this section">#</a></h4>
+<p>Definitions registered as existing object instances cannot be used with <code>make()</code>. Use <code>get()</code> to retrieve those instances.</p>
+<div class="code-block"><div class="code-label"><span>php</span><button class="copy-code" type="button">Copy</button></div><pre><code class="language-php">$logger = new Logger();
+
+$container-&gt;set( Logger::class, $logger );
+
+$same_logger = $container-&gt;get( Logger::class ); // OK.
+$new_logger = $container-&gt;make( Logger::class ); // Throws ContainerException.</code></pre></div>
+<h4 id="make-shared-dependencies">make() - Shared dependencies<a class="heading-anchor" href="#make-shared-dependencies" aria-label="Link to this section">#</a></h4>
+<p>Only the requested root object is created anew. Class dependencies are resolved with <code>get()</code>, so they are shared and reused by subsequent calls.</p>
+<div class="code-block"><div class="code-label"><span>php</span><button class="copy-code" type="button">Copy</button></div><pre><code class="language-php">class ReportController {
+	public function __construct( public Logger $logger ) {}
+}
+
+$first = $container-&gt;make( ReportController::class );
+$second = $container-&gt;make( ReportController::class );
+
+var_dump( $first === $second ); // false
+var_dump( $first-&gt;logger === $second-&gt;logger ); // true</code></pre></div>
+<h4 id="make-registered-definitions">make() - Registered definitions<a class="heading-anchor" href="#make-registered-definitions" aria-label="Link to this section">#</a></h4>
+<p>Class-string definitions are instantiated again, and closure factories are invoked on every call.</p>
+<div class="code-block"><div class="code-label"><span>php</span><button class="copy-code" type="button">Copy</button></div><pre><code class="language-php">$container-&gt;set( Mailer::class, static fn () =&gt; new Mailer() );
+
+var_dump( $container-&gt;make( Mailer::class ) === $container-&gt;make( Mailer::class ) ); // false
+var_dump( $container-&gt;get( Mailer::class ) === $container-&gt;get( Mailer::class ) ); // true</code></pre></div>
 <h3 id="comparison-with-other-containers">Comparison with other containers<a class="heading-anchor" href="#comparison-with-other-containers" aria-label="Link to this section">#</a></h3>
 <div class="table-wrap"><table><thead><tr><th>Container</th><th>Deps</th><th>PSR-11</th><th>Autowiring</th><th>Shared services</th><th>New instance method</th><th>Scalars</th><th>Config</th></tr></thead><tbody><tr><td>LiteWire DI</td><td>no</td><td>style</td><td>yes</td><td><code>get()</code></td><td><code>make()</code></td><td>runtime</td><td>no</td></tr><tr><td>PHP-DI</td><td>yes</td><td>yes</td><td>yes</td><td><code>get()</code></td><td><code>make()</code></td><td>yes</td><td>yes</td></tr><tr><td>Symfony DI</td><td>yes</td><td>yes</td><td>yes</td><td><code>get()</code></td><td>factories/services</td><td>yes</td><td>yes</td></tr><tr><td>Laravel Container</td><td>yes</td><td>partly/yes</td><td>yes</td><td><code>singleton(), instance()</code></td><td><code>make()</code></td><td>yes</td><td>yes</td></tr><tr><td>Laminas ServiceManager</td><td>yes</td><td>yes</td><td>yes</td><td>shared services</td><td><code>build()</code></td><td>yes</td><td>yes</td></tr><tr><td>League Container</td><td>yes</td><td>yes</td><td>yes</td><td><code>addShared()</code></td><td>definitions/factories</td><td>yes</td><td>yes</td></tr><tr><td>Yii DI Container</td><td>yes</td><td>no</td><td>yes</td><td><code>setSingleton()</code></td><td><code>get()</code></td><td>yes</td><td>yes</td></tr><tr><td>Pimple</td><td>yes</td><td>no</td><td>no</td><td>default behavior</td><td><code>factory()</code></td><td>yes</td><td>yes</td></tr><tr><td>Nette DI</td><td>yes</td><td>no/adapter</td><td>yes</td><td>generated services</td><td>generated factories</td><td>yes</td><td>yes</td></tr></tbody></table></div>
 <p>Best for:</p>
@@ -363,7 +371,7 @@ $mailer = $container-&gt;make( Mailer::class, [
 <li><code>Nette DI</code> - Nette apps</li>
 </ul>
 <h3 id="limitations">Limitations<a class="heading-anchor" href="#limitations" aria-label="Link to this section">#</a></h3>
-<p>LiteWire DI intentionally does not include:</p>
+<p>LiteWire DI does not include:</p>
 <ul>
 <li>A compiled container.</li>
 <li>Complex configuration files.</li>
@@ -379,10 +387,10 @@ $mailer = $container-&gt;make( Mailer::class, [
 <li>Union or intersection type resolution.</li>
 <li>Variadic parameter resolution.</li>
 </ul>
-<p>Required scalar constructor parameters must be provided manually.</p>
-<p>These features would make the public API larger and less focused. The main advantage of LiteWire DI is its strict object model in one small PHP file.</p>
-<p>Full PSR-11 support is also a tradeoff because it requires a dependency on <code>psr/container</code>. LiteWire DI keeps a PSR-11-style API instead. A separate optional adapter may be added in the future.</p></section>
-<section class="doc-source doc-guide" data-doc-source="benchmarks/README.md"><header class="guide-header"><p class="section-label">Report</p><h2 id="benchmarks">Benchmarks<a class="heading-anchor" href="#benchmarks" aria-label="Link to this guide">#</a></h2><a class="source-link" href="https://github.com/doiftrue/litewire-di/blob/main/benchmarks/README.md" target="_blank" rel="noreferrer">View Markdown source ↗</a></header><p>This report records the latest detailed performance measurements for LiteWire DI. Benchmark results depend on the machine, PHP version, loaded extensions, and background load, so compare runs made in the same environment.</p>
+<p>Required scalar constructor parameters must be provided by your code.</p>
+<p>These features would make the API larger. LiteWire DI keeps one strict object model in one small PHP file.</p>
+<p>Full PSR-11 support would require <code>psr/container</code>. LiteWire DI keeps the API style without the dependency. An optional adapter may be added later.</p></section>
+<section class="doc-source doc-guide" data-doc-source="benchmarks/README.md"><header class="guide-header"><p class="section-label">Report</p><h2 id="benchmarks">Benchmarks<a class="heading-anchor" href="#benchmarks" aria-label="Link to this guide">#</a></h2><a class="source-link" href="https://github.com/doiftrue/litewire-di/blob/main/benchmarks/README.md" target="_blank" rel="noreferrer">View Markdown source ↗</a></header><p>Latest detailed performance measurements for LiteWire DI. Timings depend on PHP, hardware, extensions, and system load, so compare runs from the same environment.</p>
 <h3 id="latest-run">Latest run<a class="heading-anchor" href="#latest-run" aria-label="Link to this section">#</a></h3>
 <ul>
 <li>Date: 2026-07-06</li>
@@ -435,12 +443,7 @@ $mailer = $container-&gt;make( Mailer::class, [
 <ul>
 <li><strong>get__deep_autowiring__stored</strong></li>
 <p>Returns a previously resolved <code>ClassDeepA</code> graph. This measures lookup of an already stored top-level shared instance.</p>
-</ul>
-<h3 id="run-locally">Run locally<a class="heading-anchor" href="#run-locally" aria-label="Link to this section">#</a></h3>
-<p>From the repository root:</p>
-<div class="code-block"><div class="code-label"><span>bash</span><button class="copy-code" type="button">Copy</button></div><pre><code class="language-bash">make benchmark</code></pre></div>
-<p>The command installs PHPBench into the isolated <code>tools/benchmark/vendor</code> directory and then executes all subjects. Neither benchmark dependencies nor generated lock files are committed.</p>
-<p>For meaningful comparisons, keep the PHP version, OPcache setting, hardware, and system load consistent between runs.</p></section>
+</ul></section>
 <section class="doc-source doc-guide" data-doc-source="docs/content/wordpress-plugin.md"><header class="guide-header"><p class="section-label">Extended guide</p><h2 id="wordpress-plugin">WordPress plugin<a class="heading-anchor" href="#wordpress-plugin" aria-label="Link to this guide">#</a></h2><a class="source-link" href="https://github.com/doiftrue/litewire-di/blob/main/docs/content/wordpress-plugin.md" target="_blank" rel="noreferrer">View Markdown source ↗</a></header><p>This example shows a small plugin with an admin settings page and an admin notice. It uses a container to connect the plugin classes.</p>
 <p>The example is intentionally simple. It works as a useful starting structure, not as a complete production plugin.</p>
 <h3 id="why-use-a-container-in-a-plugin">Why use a container in a plugin?<a class="heading-anchor" href="#why-use-a-container-in-a-plugin" aria-label="Link to this section">#</a></h3>

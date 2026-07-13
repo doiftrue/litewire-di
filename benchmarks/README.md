@@ -1,6 +1,6 @@
 # LiteWire DI benchmarks
 
-This report records the latest detailed performance measurements for LiteWire DI. Benchmark results depend on the machine, PHP version, loaded extensions, and background load, so compare runs made in the same environment.
+Latest detailed performance measurements for LiteWire DI. Timings depend on PHP, hardware, extensions, and system load, so compare runs from the same environment.
 
 ## Latest run
 

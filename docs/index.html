@@ -739,9 +739,9 @@ $page = new SettingsPage( $config, $logger );</code></pre></div>
 <li>avoid global variables and direct <code>getenv()</code> calls inside services.</li>
 </ul>
 <p>Each container handles configuration differently. The examples below show the usual approach for each container.</p>
-<p>ALl examples use PHP 8.2 syntax.</p>
+<p>All examples use PHP 8.2 syntax.</p>
 <h3 id="service-used-in-all-examples">Service used in all examples<a class="heading-anchor" href="#service-used-in-all-examples" aria-label="Link to this section">#</a></h3>
-<p>All examples below will create the same service:</p>
+<p>Most examples below create this service:</p>
 <div class="code-block"><div class="code-label"><span>php</span><button class="copy-code" type="button">Copy</button></div><pre><code class="language-php">final class SomeService {
 	public function __construct(
 		private readonly string $db_host,
@@ -754,7 +754,10 @@ $page = new SettingsPage( $config, $logger );</code></pre></div>
 	) {}
 }</code></pre></div>
 <h3 id="litewire-di">LiteWire DI<a class="heading-anchor" href="#litewire-di" aria-label="Link to this section">#</a></h3>
-<p>LiteWire DI can only store objects (not individual config values). Therefore, <code>config.php</code> creates and returns a small config object:</p>
+<p>LiteWire DI can only store objects, not individual config values. That keeps the container small, but configuration remains application code.</p>
+<p>There are several reasonable ways to connect configuration values to services.</p>
+<h4 id="option-1-inject-one-config-object">Option 1: inject one config object<a class="heading-anchor" href="#option-1-inject-one-config-object" aria-label="Link to this section">#</a></h4>
+<p>This is usually the simplest LiteWire DI option. The application creates one readonly configuration object, registers it in the container, and lets autowiring pass it to services.</p>
 <p>file: <code>config.php</code></p>
 <div class="code-block"><div class="code-label"><span>php</span><button class="copy-code" type="button">Copy</button></div><pre><code class="language-php">final readonly class AppConfig {
 	public function __construct(
@@ -777,26 +780,150 @@ return new AppConfig(
 	cache_dir: __DIR__ . '/var/cache',
 	debug: true,
 );</code></pre></div>
-<p>The bootstrap file registers the configuration object. A factory takes <code>AppConfig</code> and passes its values to <code>SomeService</code>:</p>
+<p>The service asks for the config object instead of many scalar values:</p>
+<div class="code-block"><div class="code-label"><span>php</span><button class="copy-code" type="button">Copy</button></div><pre><code class="language-php">final class SomeService {
+	public function __construct(
+		private readonly AppConfig $config,
+	) {}
+}</code></pre></div>
+<p>The bootstrap file registers the configuration object:</p>
 <p>file: <code>bootstrap.php</code></p>
 <div class="code-block"><div class="code-label"><span>php</span><button class="copy-code" type="button">Copy</button></div><pre><code class="language-php">$container = new Container();
 $config = require __DIR__ . '/config.php';
 
 $container-&gt;set( AppConfig::class, $config );
-$container-&gt;set( SomeService::class, static function ( AppConfig $config ) {
+
+$some_service = $container-&gt;get( SomeService::class );</code></pre></div>
+<p>Pros:</p>
+<ul>
+<li>smallest bootstrap code;</li>
+<li>no factory is needed for <code>SomeService</code>;</li>
+<li>the config object is typed and readonly.</li>
+</ul>
+<p>Cons:</p>
+<ul>
+<li><code>SomeService</code> depends on the whole <code>AppConfig</code> object;</li>
+<li>a large <code>AppConfig</code> can become a bag of unrelated settings.</li>
+</ul>
+<aside class="callout info"><strong>Info</strong><p><code>AppConfig</code> contains values but no application logic. It is <code>readonly</code>, so services cannot accidentally change the settings after startup. The class and its values are both visible in one file.</p></aside>
+<h4 id="option-2-split-config-into-focused-objects">Option 2: split config into focused objects<a class="heading-anchor" href="#option-2-split-config-into-focused-objects" aria-label="Link to this section">#</a></h4>
+<p>If one config object grows too large, split it by responsibility:</p>
+<div class="code-block"><div class="code-label"><span>php</span><button class="copy-code" type="button">Copy</button></div><pre><code class="language-php">final readonly class DatabaseConfig {
+	public function __construct(
+		public string $host,
+		public int $port,
+		public string $name,
+	) {}
+}
+
+final readonly class ApiConfig {
+	public function __construct(
+		public string $url,
+		public int $timeout,
+	) {}
+}
+
+final class SomeService {
+	public function __construct(
+		private readonly DatabaseConfig $database,
+		private readonly ApiConfig $api,
+	) {}
+}</code></pre></div>
+<p>Register each configured object:</p>
+<div class="code-block"><div class="code-label"><span>php</span><button class="copy-code" type="button">Copy</button></div><pre><code class="language-php">$container = new Container();
+
+$container-&gt;set( DatabaseConfig::class, new DatabaseConfig(
+	host: 'localhost',
+	port: 3306,
+	name: 'my_application',
+) );
+
+$container-&gt;set( ApiConfig::class, new ApiConfig(
+	url: 'https://api.example.com',
+	timeout: 10,
+) );
+
+$some_service = $container-&gt;get( SomeService::class );</code></pre></div>
+<p>Pros:</p>
+<ul>
+<li>services depend only on the configuration they use;</li>
+<li>each config object has a clear purpose;</li>
+<li>large applications stay easier to navigate.</li>
+</ul>
+<p>Cons:</p>
+<ul>
+<li>more classes and registrations;</li>
+<li>too many tiny config objects can add noise in a small application.</li>
+</ul>
+<h4 id="option-3-return-an-array-from-config-php">Option 3: return an array from <code>config.php</code><a class="heading-anchor" href="#option-3-return-an-array-from-config-php" aria-label="Link to this section">#</a></h4>
+<p>Some projects prefer a plain PHP config file and create typed objects in bootstrap code.</p>
+<p>file: <code>config.php</code></p>
+<div class="code-block"><div class="code-label"><span>php</span><button class="copy-code" type="button">Copy</button></div><pre><code class="language-php">return [
+	'db_host' =&gt; 'localhost',
+	'db_port' =&gt; 3306,
+	'db_name' =&gt; 'my_application',
+	'api_url' =&gt; 'https://api.example.com',
+	'api_timeout' =&gt; 10,
+	'cache_dir' =&gt; __DIR__ . '/var/cache',
+	'debug' =&gt; true,
+];</code></pre></div>
+<p>file: <code>bootstrap.php</code></p>
+<div class="code-block"><div class="code-label"><span>php</span><button class="copy-code" type="button">Copy</button></div><pre><code class="language-php">$container = new Container();
+$values = require __DIR__ . '/config.php';
+
+$container-&gt;set( AppConfig::class, new AppConfig(
+	db_host: $values['db_host'],
+	db_port: $values['db_port'],
+	db_name: $values['db_name'],
+	api_url: $values['api_url'],
+	api_timeout: $values['api_timeout'],
+	cache_dir: $values['cache_dir'],
+	debug: $values['debug'],
+) );
+
+$some_service = $container-&gt;get( SomeService::class );</code></pre></div>
+<p>Pros:</p>
+<ul>
+<li><code>config.php</code> is familiar and easy to override;</li>
+<li>values can be loaded, merged, or validated before objects are created;</li>
+<li>the container still receives typed objects.</li>
+</ul>
+<p>Cons:</p>
+<ul>
+<li>array keys are not checked by PHP;</li>
+<li>bootstrap code has to map array values into objects;</li>
+<li>type errors are discovered later than with direct object creation.</li>
+</ul>
+<h4 id="option-4-use-a-factory-for-scalar-constructor-values">Option 4: use a factory for scalar constructor values<a class="heading-anchor" href="#option-4-use-a-factory-for-scalar-constructor-values" aria-label="Link to this section">#</a></h4>
+<p>If a service should keep scalar constructor arguments, register a factory for that service:</p>
+<div class="code-block"><div class="code-label"><span>php</span><button class="copy-code" type="button">Copy</button></div><pre><code class="language-php">$container = new Container();
+
+$container-&gt;set( SomeService::class, static function () {
 	return new SomeService(
-		db_host: $config-&gt;db_host,
-		db_port: $config-&gt;db_port,
-		db_name: $config-&gt;db_name,
-		api_url: $config-&gt;api_url,
-		api_timeout: $config-&gt;api_timeout,
-		cache_dir: $config-&gt;cache_dir,
-		debug: $config-&gt;debug,
+		db_host: 'localhost',
+		db_port: 3306,
+		db_name: 'my_application',
+		api_url: 'https://api.example.com',
+		api_timeout: 10,
+		cache_dir: __DIR__ . '/var/cache',
+		debug: true,
 	);
 } );
 
 $some_service = $container-&gt;get( SomeService::class );</code></pre></div>
-<aside class="callout info"><strong>Info</strong><p><code>AppConfig</code> contains values but no application logic. It is <code>readonly</code>, so services cannot accidentally change the settings after startup. The class and its values are both visible in one file.</p></aside>
+<p>Pros:</p>
+<ul>
+<li>the service constructor stays explicit;</li>
+<li>no extra config class is required;</li>
+<li>useful for one-off services or third-party classes.</li>
+</ul>
+<p>Cons:</p>
+<ul>
+<li>repeated scalar values can spread across factories;</li>
+<li>configuration is less reusable in tests and other services;</li>
+<li>large factories become harder to read.</li>
+</ul>
+<p>For small applications, option 1 is usually enough. If the config object becomes too broad, option 2 is the cleaner next step. Options 3 and 4 are useful when your application already has array config files or when a particular service really should keep scalar constructor arguments.</p>
 <h3 id="php-di">PHP-DI<a class="heading-anchor" href="#php-di" aria-label="Link to this section">#</a></h3>
 <p>PHP-DI can store values under string IDs such as <code>database.host</code> and <code>app.debug</code>. It can pass those values directly to the service constructor.</p>
 <p>The PHP-DI definition file contains both the values and instructions that connect each value to a constructor argument:</p>

@@ -10,12 +10,12 @@ Configuration helps to:
 
 Each container handles configuration differently. The examples below show the usual approach for each container.
 
-ALl examples use PHP 8.2 syntax.
+All examples use PHP 8.2 syntax.
 
 
 Service used in all examples
 ---------------------
-All examples below will create the same service:
+Most examples below create this service:
 
 ```php
 final class SomeService {
@@ -34,7 +34,13 @@ final class SomeService {
 
 LiteWire DI
 -----------
-LiteWire DI can only store objects (not individual config values). Therefore, `config.php` creates and returns a small config object:
+LiteWire DI can only store objects, not individual config values. That keeps the container small, but configuration remains application code.
+
+There are several reasonable ways to connect configuration values to services.
+
+### Option 1: inject one config object
+
+This is usually the simplest LiteWire DI option. The application creates one readonly configuration object, registers it in the container, and lets autowiring pass it to services.
 
 file: `config.php`
 ```php
@@ -61,7 +67,17 @@ return new AppConfig(
 );
 ```
 
-The bootstrap file registers the configuration object. A factory takes `AppConfig` and passes its values to `SomeService`:
+The service asks for the config object instead of many scalar values:
+
+```php
+final class SomeService {
+	public function __construct(
+		private readonly AppConfig $config,
+	) {}
+}
+```
+
+The bootstrap file registers the configuration object:
 
 file: `bootstrap.php`
 ```php
@@ -69,24 +85,164 @@ $container = new Container();
 $config = require __DIR__ . '/config.php';
 
 $container->set( AppConfig::class, $config );
-$container->set( SomeService::class, static function ( AppConfig $config ) {
+
+$some_service = $container->get( SomeService::class );
+```
+
+Pros:
+
+- smallest bootstrap code;
+- no factory is needed for `SomeService`;
+- the config object is typed and readonly.
+
+Cons:
+
+- `SomeService` depends on the whole `AppConfig` object;
+- a large `AppConfig` can become a bag of unrelated settings.
+
+> [!INFO]
+> `AppConfig` contains values but no application logic. It is `readonly`, so services cannot accidentally change the settings after startup. The class and its values are both visible in one file.
+
+### Option 2: split config into focused objects
+
+If one config object grows too large, split it by responsibility:
+
+```php
+final readonly class DatabaseConfig {
+	public function __construct(
+		public string $host,
+		public int $port,
+		public string $name,
+	) {}
+}
+
+final readonly class ApiConfig {
+	public function __construct(
+		public string $url,
+		public int $timeout,
+	) {}
+}
+
+final class SomeService {
+	public function __construct(
+		private readonly DatabaseConfig $database,
+		private readonly ApiConfig $api,
+	) {}
+}
+```
+
+Register each configured object:
+
+```php
+$container = new Container();
+
+$container->set( DatabaseConfig::class, new DatabaseConfig(
+	host: 'localhost',
+	port: 3306,
+	name: 'my_application',
+) );
+
+$container->set( ApiConfig::class, new ApiConfig(
+	url: 'https://api.example.com',
+	timeout: 10,
+) );
+
+$some_service = $container->get( SomeService::class );
+```
+
+Pros:
+
+- services depend only on the configuration they use;
+- each config object has a clear purpose;
+- large applications stay easier to navigate.
+
+Cons:
+
+- more classes and registrations;
+- too many tiny config objects can add noise in a small application.
+
+### Option 3: return an array from `config.php`
+
+Some projects prefer a plain PHP config file and create typed objects in bootstrap code.
+
+file: `config.php`
+```php
+return [
+	'db_host' => 'localhost',
+	'db_port' => 3306,
+	'db_name' => 'my_application',
+	'api_url' => 'https://api.example.com',
+	'api_timeout' => 10,
+	'cache_dir' => __DIR__ . '/var/cache',
+	'debug' => true,
+];
+```
+
+file: `bootstrap.php`
+```php
+$container = new Container();
+$config = require __DIR__ . '/config.php';
+
+$container->set( AppConfig::class, new AppConfig(
+	db_host: $config['db_host'],
+	db_port: $config['db_port'],
+	db_name: $config['db_name'],
+	api_url: $config['api_url'],
+	api_timeout: $config['api_timeout'],
+	cache_dir: $config['cache_dir'],
+	debug: $config['debug'],
+) );
+
+$some_service = $container->get( SomeService::class );
+```
+
+Pros:
+
+- `config.php` is familiar and easy to override;
+- values can be loaded, merged, or validated before objects are created;
+- the container still receives typed objects.
+
+Cons:
+
+- array keys are not checked by PHP;
+- bootstrap code has to map array values into objects;
+- type errors are discovered later than with direct object creation.
+
+### Option 4: use a factory for scalar constructor values
+
+If a service should keep scalar constructor arguments, register a factory for that service:
+
+```php
+$container = new Container();
+
+$container->set( SomeService::class, static function () {
 	return new SomeService(
-		db_host: $config->db_host,
-		db_port: $config->db_port,
-		db_name: $config->db_name,
-		api_url: $config->api_url,
-		api_timeout: $config->api_timeout,
-		cache_dir: $config->cache_dir,
-		debug: $config->debug,
+		db_host: 'localhost',
+		db_port: 3306,
+		db_name: 'my_application',
+		api_url: 'https://api.example.com',
+		api_timeout: 10,
+		cache_dir: __DIR__ . '/var/cache',
+		debug: true,
 	);
 } );
 
 $some_service = $container->get( SomeService::class );
 ```
 
-> [!INFO]
-> `AppConfig` contains values but no application logic. It is `readonly`, so services cannot accidentally change the settings after startup. The class and its values are both visible in one file.
+Pros:
 
+- the service constructor stays explicit;
+- no extra config class is required;
+- useful for one-off services or third-party classes.
+
+Cons:
+
+- repeated scalar values can spread across factories;
+- configuration is less reusable in tests and other services;
+- large factories become harder to read.
+
+For small applications, option 1 is usually enough. If the config object becomes too broad, option 2 is the cleaner next step. Options 3 and 4 are useful when your application already has array config files or when a particular service really should keep scalar constructor arguments.
 
 
 PHP-DI

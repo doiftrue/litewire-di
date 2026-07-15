@@ -887,8 +887,8 @@ $some_service = $container-&gt;get( SomeService::class );</code></pre></div>
 <li>more classes and registrations;</li>
 <li>too many tiny config objects can add noise in a small application.</li>
 </ul>
-<h4 id="option-3-return-an-array-from-config-php">Option 3: return an array from <code>config.php</code><a class="heading-anchor" href="#option-3-return-an-array-from-config-php" aria-label="Link to this section">#</a></h4>
-<p>Some projects prefer a plain PHP config file and create typed objects in bootstrap code.</p>
+<h4 id="option-3-configure-named-constructor-parameters">Option 3: configure named constructor parameters<a class="heading-anchor" href="#option-3-configure-named-constructor-parameters" aria-label="Link to this section">#</a></h4>
+<p>For an instantiable service class with scalar constructor arguments, <code>config.php</code> can return an associative parameter array that is passed directly to <code>set()</code>. The keys must match constructor parameter names. Any omitted class dependencies are autowired.</p>
 <p>file: <code>config.php</code></p>
 <div class="code-block"><div class="code-label"><span>php</span><button class="copy-code" type="button">Copy</button></div><pre><code class="language-php">return [
 	'db_host' =&gt; 'localhost',
@@ -899,6 +899,29 @@ $some_service = $container-&gt;get( SomeService::class );</code></pre></div>
 	'cache_dir' =&gt; __DIR__ . '/var/cache',
 	'debug' =&gt; true,
 ];</code></pre></div>
+<p>file: <code>bootstrap.php</code></p>
+<div class="code-block"><div class="code-label"><span>php</span><button class="copy-code" type="button">Copy</button></div><pre><code class="language-php">$container = new Container();
+$values = require __DIR__ . '/config.php';
+
+$container-&gt;set( SomeService::class, $values );
+
+$some_service = $container-&gt;get( SomeService::class );</code></pre></div>
+<p>Pros:</p>
+<ul>
+<li>the config file stays familiar while bootstrap code remains small;</li>
+<li>no extra config class or factory is required;</li>
+<li>remaining object dependencies are still autowired;</li>
+<li><code>make()</code> can create a fresh instance and override individual configured values.</li>
+</ul>
+<p>Cons:</p>
+<ul>
+<li>parameter names and value types are checked at runtime;</li>
+<li>the config file is coupled to this class's constructor signature;</li>
+<li>values are local to this class definition and are not reusable scalar entries;</li>
+<li>an interface whose implementation needs scalar configuration requires a factory because the array does not identify that implementation.</li>
+</ul>
+<h4 id="option-4-create-a-typed-config-object-from-an-array">Option 4: create a typed config object from an array<a class="heading-anchor" href="#option-4-create-a-typed-config-object-from-an-array" aria-label="Link to this section">#</a></h4>
+<p>If the application already has an array config file but services should depend on a typed configuration object, map the loaded values into that object in bootstrap code.</p>
 <p>file: <code>bootstrap.php</code></p>
 <div class="code-block"><div class="code-label"><span>php</span><button class="copy-code" type="button">Copy</button></div><pre><code class="language-php">$container = new Container();
 $values = require __DIR__ . '/config.php';
@@ -918,41 +941,13 @@ $some_service = $container-&gt;get( SomeService::class );</code></pre></div>
 <ul>
 <li><code>config.php</code> is familiar and easy to override;</li>
 <li>values can be loaded, merged, or validated before objects are created;</li>
-<li>the container still receives typed objects.</li>
+<li>services receive a reusable typed config object.</li>
 </ul>
 <p>Cons:</p>
 <ul>
 <li>array keys are not checked by PHP;</li>
-<li>bootstrap code has to map array values into objects;</li>
+<li>bootstrap code has to map array values into the object;</li>
 <li>type errors are discovered later than with direct object creation.</li>
-</ul>
-<h4 id="option-4-configure-named-constructor-parameters">Option 4: configure named constructor parameters<a class="heading-anchor" href="#option-4-configure-named-constructor-parameters" aria-label="Link to this section">#</a></h4>
-<p>For an instantiable service class with scalar constructor arguments, pass an associative parameter array to <code>set()</code>. The keys must match constructor parameter names. Any omitted class dependencies are autowired.</p>
-<div class="code-block"><div class="code-label"><span>php</span><button class="copy-code" type="button">Copy</button></div><pre><code class="language-php">$container = new Container();
-
-$container-&gt;set( SomeService::class, [
-	'db_host'     =&gt; 'localhost',
-	'db_port'     =&gt; 3306,
-	'db_name'     =&gt; 'my_application',
-	'api_url'     =&gt; 'https://api.example.com',
-	'api_timeout' =&gt; 10,
-	'cache_dir'   =&gt; __DIR__ . '/var/cache',
-	'debug'       =&gt; true,
-] );
-
-$some_service = $container-&gt;get( SomeService::class );</code></pre></div>
-<p>Pros:</p>
-<ul>
-<li>no extra config class or factory is required;</li>
-<li>constructor values stay attached to the class they configure;</li>
-<li>remaining object dependencies are still autowired;</li>
-<li><code>make()</code> can create a fresh instance and override individual configured values.</li>
-</ul>
-<p>Cons:</p>
-<ul>
-<li>parameter names are checked at runtime;</li>
-<li>values are local to this class definition and are not reusable scalar entries;</li>
-<li>an interface whose implementation needs scalar configuration requires a factory because the array does not identify that implementation.</li>
 </ul>
 <h4 id="option-5-use-a-factory-for-scalar-constructor-values">Option 5: use a factory for scalar constructor values<a class="heading-anchor" href="#option-5-use-a-factory-for-scalar-constructor-values" aria-label="Link to this section">#</a></h4>
 <p>If a service should keep scalar constructor arguments, register a factory for that service:</p>
@@ -983,7 +978,7 @@ $some_service = $container-&gt;get( SomeService::class );</code></pre></div>
 <li>configuration is less reusable in tests and other services;</li>
 <li>large factories become harder to read.</li>
 </ul>
-<p>For small applications, option 1 is usually enough. If the config object becomes too broad, option 2 is the cleaner next step. Option 3 is useful when the application already has array config files. Option 4 is concise when values belong to one concrete class; use option 5 when construction needs custom logic or an interface implementation must be selected at the same time.</p>
+<p>For small applications, option 1 is usually enough. If the config object becomes too broad, option 2 is the cleaner next step. Option 3 is the most concise choice when an array config belongs to one concrete class. Use option 4 when services should receive a reusable typed config object, and option 5 when construction needs custom logic or an interface implementation must be selected at the same time.</p>
 <h3 id="php-di">PHP-DI<a class="heading-anchor" href="#php-di" aria-label="Link to this section">#</a></h3>
 <p>PHP-DI can store values under string IDs such as <code>database.host</code> and <code>app.debug</code>. It can pass those values directly to the service constructor.</p>
 <p>The PHP-DI definition file contains both the values and instructions that connect each value to a constructor argument:</p>

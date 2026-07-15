@@ -161,9 +161,9 @@ Cons:
 - more classes and registrations;
 - too many tiny config objects can add noise in a small application.
 
-### Option 3: return an array from `config.php`
+### Option 3: configure named constructor parameters
 
-Some projects prefer a plain PHP config file and create typed objects in bootstrap code.
+For an instantiable service class with scalar constructor arguments, `config.php` can return an associative parameter array that is passed directly to `set()`. The keys must match constructor parameter names. Any omitted class dependencies are autowired.
 
 file: `config.php`
 ```php
@@ -181,16 +181,44 @@ return [
 file: `bootstrap.php`
 ```php
 $container = new Container();
-$config = require __DIR__ . '/config.php';
+$values = require __DIR__ . '/config.php';
+
+$container->set( SomeService::class, $values );
+
+$some_service = $container->get( SomeService::class );
+```
+
+Pros:
+
+- the config file stays familiar while bootstrap code remains small;
+- no extra config class or factory is required;
+- remaining object dependencies are still autowired;
+- `make()` can create a fresh instance and override individual configured values.
+
+Cons:
+
+- parameter names and value types are checked at runtime;
+- the config file is coupled to this class's constructor signature;
+- values are local to this class definition and are not reusable scalar entries;
+- an interface whose implementation needs scalar configuration requires a factory because the array does not identify that implementation.
+
+### Option 4: create a typed config object from an array
+
+If the application already has an array config file but services should depend on a typed configuration object, map the loaded values into that object in bootstrap code.
+
+file: `bootstrap.php`
+```php
+$container = new Container();
+$values = require __DIR__ . '/config.php';
 
 $container->set( AppConfig::class, new AppConfig(
-	db_host: $config['db_host'],
-	db_port: $config['db_port'],
-	db_name: $config['db_name'],
-	api_url: $config['api_url'],
-	api_timeout: $config['api_timeout'],
-	cache_dir: $config['cache_dir'],
-	debug: $config['debug'],
+	db_host: $values['db_host'],
+	db_port: $values['db_port'],
+	db_name: $values['db_name'],
+	api_url: $values['api_url'],
+	api_timeout: $values['api_timeout'],
+	cache_dir: $values['cache_dir'],
+	debug: $values['debug'],
 ) );
 
 $some_service = $container->get( SomeService::class );
@@ -200,46 +228,13 @@ Pros:
 
 - `config.php` is familiar and easy to override;
 - values can be loaded, merged, or validated before objects are created;
-- the container still receives typed objects.
+- services receive a reusable typed config object.
 
 Cons:
 
 - array keys are not checked by PHP;
-- bootstrap code has to map array values into objects;
+- bootstrap code has to map array values into the object;
 - type errors are discovered later than with direct object creation.
-
-### Option 4: configure named constructor parameters
-
-For an instantiable service class with scalar constructor arguments, pass an associative parameter array to `set()`. The keys must match constructor parameter names. Any omitted class dependencies are autowired.
-
-```php
-$container = new Container();
-
-$container->set( SomeService::class, [
-	'db_host'     => 'localhost',
-	'db_port'     => 3306,
-	'db_name'     => 'my_application',
-	'api_url'     => 'https://api.example.com',
-	'api_timeout' => 10,
-	'cache_dir'   => __DIR__ . '/var/cache',
-	'debug'       => true,
-] );
-
-$some_service = $container->get( SomeService::class );
-```
-
-Pros:
-
-- no extra config class or factory is required;
-- constructor values stay attached to the class they configure;
-- remaining object dependencies are still autowired;
-- `make()` can create a fresh instance and override individual configured values.
-
-Cons:
-
-- parameter names are checked at runtime;
-- values are local to this class definition and are not reusable scalar entries;
-- an interface whose implementation needs scalar configuration requires a factory because the array does not identify that implementation.
 
 ### Option 5: use a factory for scalar constructor values
 
@@ -275,7 +270,7 @@ Cons:
 - configuration is less reusable in tests and other services;
 - large factories become harder to read.
 
-For small applications, option 1 is usually enough. If the config object becomes too broad, option 2 is the cleaner next step. Option 3 is useful when the application already has array config files. Option 4 is concise when values belong to one concrete class; use option 5 when construction needs custom logic or an interface implementation must be selected at the same time.
+For small applications, option 1 is usually enough. If the config object becomes too broad, option 2 is the cleaner next step. Option 3 is the most concise choice when an array config belongs to one concrete class. Use option 4 when services should receive a reusable typed config object, and option 5 when construction needs custom logic or an interface implementation must be selected at the same time.
 
 
 PHP-DI

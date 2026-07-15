@@ -141,7 +141,7 @@ final class PluginConfig {
 }
 ```
 
-A configuration object is better than asking the container for string keys. It gives the values clear names and keeps them type-safe.
+A configuration object is better when the same related values are used by several classes. It gives the values clear names and keeps them type-safe. For scalar values used by only one concrete class, `set( MyClass::class, [ 'parameter' => $value ] )` is a shorter alternative.
 
 ## 5. Logger interface and implementation
 
@@ -348,7 +348,8 @@ Register something only when LiteWire DI cannot decide how to create it:
 
 - bind an interface to a concrete class with `set()`;
 - register an existing configured object;
-- use a factory for scalar values or third-party APIs.
+- attach named scalar parameters to a concrete class with `set()`;
+- use a factory when construction needs custom logic or a third-party API.
 
 ## Testing a class without the container
 

@@ -38,7 +38,7 @@ Features
 
 - Single portable PHP file.
 - No runtime dependencies.
-- Register existing objects, classes, and closure factories with `set()`.
+- Register existing objects, classes, closure factories, and configured constructor parameters with `set()`.
 - Autowire registered and unregistered classes.
 - Return shared service instances with `get()`.
 - Create fresh instances with `make()`.
@@ -54,13 +54,13 @@ API
 Four public methods:
 
 - `has()` checks if a service can be resolved.
-- `set()` registers an object, class, or factory.
+- `set()` registers an object, class, factory, or named parameters for an instantiable class.
 - `get()` returns a shared object.
 - `make()` creates a fresh object.
 
 ```php
 $container->has( class-string $id ): bool;
-$container->set( class-string $id, object|Closure|class-string $service ): void;
+$container->set( class-string $id, object|Closure|class-string|array<string, mixed> $service ): void;
 $container->get( class-string $id );
 $container->make( class-string $id, array $parameters = [] );
 ```
@@ -106,6 +106,33 @@ $container->set( Logger_Interface::class, File_Logger::class );
 $logger = $container->get( Logger_Interface::class );
 ```
 
+### Configured parameters
+
+Pass an associative array to register named constructor parameters for an instantiable class. Missing class dependencies are autowired. `get()` creates and stores the configured service.
+
+```php
+final class Plugin {
+	private string $main_file;
+	private Options $options;
+
+	public function __construct(
+		string $main_file,
+		Options $options
+	) {
+		$this->main_file = $main_file;
+		$this->options = $options;
+	}
+}
+
+$container->set( Plugin::class, [
+	'main_file' => __FILE__,
+] );
+
+$plugin = $container->get( Plugin::class );
+```
+
+Configured parameters cannot be registered directly for an interface because the array does not identify an implementation. Use a class binding when the implementation needs no scalar configuration; otherwise use a factory.
+
 ### Factory registration
 
 Factories must return an object. Their parameters are autowired too.
@@ -135,6 +162,8 @@ $mailer = $container->make( Mailer::class, [
 	'from' => 'admin@example.com',
 ] );
 ```
+
+When the class has configured parameters from `set()`, `make()` uses them as defaults. Parameters passed directly to `make()` take priority.
 
 
 Documentation
@@ -190,7 +219,7 @@ See: [Detailed benchmark results](benchmarks/README.md)
 Limitations
 -----------
 
-LiteWire DI keeps the API small. There is no compiled container, service providers, scopes, tags, scalar storage, string service IDs, or config format. Pass required scalar values with factories, `make()` parameters, or a config object.
+LiteWire DI keeps the API small. There is no compiled container, service providers, scopes, tags, standalone scalar storage, string service IDs, or config format. Pass required scalar values as configured class parameters, factory arguments, `make()` parameters, or through a config object.
 
 See the [full documentation](https://doiftrue.github.io/litewire-di/#limitations) for the detailed list.
 
@@ -202,7 +231,8 @@ Inspired by [Simple DIC](https://github.com/renakdup/simple-dic)
 LiteWire DI keeps the same single-file, dependency-free approach, but uses a stricter, object-only service model:
 
 1. Service IDs must be existing class or interface names. Arbitrary string keys are rejected.
-1. The container stores only objects other values and arrays cannot be registered.
+1. Resolved container entries are always objects; associative arrays may only configure named parameters for an instantiable class.
+1. `set()` accepts named constructor parameters for shared concrete services while autowiring the remaining dependencies.
 1. `make()` accepts named runtime parameters for constructors and factories.
 1. `make()` respects registered class and factory definitions instead of resolving only the class passed as its ID.
 1. `has()` reports existing concrete classes that can be autowired without prior registration.

@@ -10,7 +10,7 @@
  * Source: https://github.com/doiftrue/litewire-di
  * Original Idea: Andrei Pisarevskii (https://github.com/renakdup/simple-dic)
  *
- * Version: 1.2.0
+ * Version: 1.3.0
  */
 
 namespace Kama\LiteWireDI;
@@ -37,7 +37,7 @@ class Container {
 	/**
 	 * Service definitions (creation rules).
 	 *
-	 * @var array<class-string, object|Closure|class-string>
+	 * @var array<class-string, object|Closure|class-string|array<string, mixed>>
 	 */
 	protected array $definitions = [];
 
@@ -85,11 +85,13 @@ class Container {
 
 	/**
 	 * Registers a service. The service may be an existing object,
-	 * a class name, or a factory (closure) that creates it.
+	 * a class name, a factory (closure) that creates it, or named constructor
+	 * parameters for the class identified by $id.
 	 * Replacing an existing service removes its stored instance.
 	 *
-	 * @param class-string                $id      Identifier of the entry to look for.
-	 * @param object|Closure|class-string $service Service definition, class name, ready instance or factory.
+	 * @param class-string $id Identifier of the entry to look for.
+	 * @param object|Closure|class-string|array<string, mixed> $service  Service definition, class name, ready instance, factory,
+	 *                                                                   or named constructor parameters.
 	 *
 	 * @phpstan-param mixed $service Runtime validation intentionally accepts an unchecked input.
 	 *
@@ -100,8 +102,25 @@ class Container {
 			throw new InvalidArgumentException( "Service ID `$id` must be an existing class or interface." );
 		}
 
-		if ( ! is_object( $service ) && ! is_string( $service ) ) {
-			throw new InvalidArgumentException( "Service definition `$id` must be an object or class name." );
+		if ( is_array( $service ) ) {
+			if ( ! class_exists( $id ) || ! $this->get_reflection( $id )->isInstantiable() ) {
+				throw new InvalidArgumentException(
+					"Container::set( ID ): ID require the service ID to be an instantiable class. ID = `$id`"
+				);
+			}
+
+			foreach ( array_keys( $service ) as $name ) {
+				if ( ! is_string( $name ) ) {
+					throw new InvalidArgumentException(
+						"Container::set( ID, SERVICE ): SERVICE parameter must be an associative array keyed by parameter name. ID = `$id`"
+					);
+				}
+			}
+		}
+		elseif ( ! is_object( $service ) && ! is_string( $service ) ) {
+			throw new InvalidArgumentException(
+				"Container::set( ID ): ID must be an object, class name, factory, or configured parameters. ID = `$id`"
+			);
 		}
 
 		if ( is_string( $service ) && ! class_exists( $service ) ) {
@@ -181,10 +200,13 @@ class Container {
 				);
 			}
 
-			/**
-			 * At this point the definition is guaranteed exists.
-			 * @var TService
-			 */
+			if ( is_array( $def ) ) {
+				/** @var TService */
+				return $this->resolve_class( $id, array_replace( $def, $parameters ) );
+			}
+
+			/** @var class-string $def The definition is guaranteed to be an existing class name. */
+			/** @var TService */
 			return $this->resolve_class( $def, $parameters );
 		}
 		finally {
@@ -207,7 +229,12 @@ class Container {
 				return $def;
 			}
 
-			// At this point the definition is guaranteed exists.
+			// $def is named parameters for the constructor.
+			if ( is_array( $def ) ) {
+				return $this->resolve_class( $id, $def );
+			}
+
+			/** @var class-string $def At this point the definition is guaranteed exists. */
 			return $this->resolve_class( $def );
 		}
 
@@ -248,7 +275,7 @@ class Container {
 	 */
 	protected function resolve_class( string $class, array $runtime_params = [] ): object {
 		try {
-			$reflection = $this->reflection_cache[ $class ] ??= new ReflectionClass( $class );
+			$reflection = $this->get_reflection( $class );
 
 			if ( ! $reflection->isInstantiable() ) {
 				throw new ContainerException( "Class `$class` is not instantiable." );
@@ -257,7 +284,7 @@ class Container {
 			$constructor = $reflection->getConstructor();
 			if ( ! $constructor ) {
 				if ( $runtime_params ) {
-					throw new ContainerException( "Class `$class` has no constructor and does not accept runtime parameters." );
+					throw new ContainerException( "Class `$class` has no constructor and does not accept parameters." );
 				}
 
 				return new $class();
@@ -325,7 +352,7 @@ class Container {
 		$unknown_params = array_diff_key( $runtime_params, $known_params );
 		if ( $unknown_params ) {
 			$names = implode( '`, `', array_keys( $unknown_params ) );
-			throw new ContainerException( "Unknown runtime parameter(s): `$names`." );
+			throw new ContainerException( "Unknown parameter(s): `$names`." );
 		}
 	}
 
@@ -383,7 +410,7 @@ class Container {
 
 		$checking[ $class ] = true;
 
-		$reflection = $this->reflection_cache[ $class ] ??= new ReflectionClass( $class );
+		$reflection = $this->get_reflection( $class );
 
 		if ( ! $reflection->isInstantiable() ) {
 			return false;
@@ -399,12 +426,12 @@ class Container {
 				return false;
 			}
 
-			$dependency = $this->get_parameter_class( $param );
-			if ( $dependency ) {
+			$id = $this->get_parameter_class( $param );
+			if ( $id ) {
 				if (
-					! isset( $this->instances[ $dependency ] )
-					&& ! isset( $this->definitions[ $dependency ] )
-					&& ( ! class_exists( $dependency ) || ! $this->can_resolve_class( $dependency, $checking ) )
+					! isset( $this->instances[ $id ] )
+					&& ! isset( $this->definitions[ $id ] )
+					&& ( ! class_exists( $id ) || ! $this->can_resolve_class( $id, $checking ) )
 				) {
 					return false;
 				}
@@ -442,6 +469,16 @@ class Container {
 
 	protected function is_valid_id( string $id ): bool {
 		return class_exists( $id ) || interface_exists( $id );
+	}
+
+	/**
+	 * @param class-string $class
+	 * @return ReflectionClass<object>
+	 *
+	 * @throws ReflectionException
+	 */
+	protected function get_reflection( string $class ): ReflectionClass {
+		return $this->reflection_cache[ $class ] ??= new ReflectionClass( $class );
 	}
 
 	protected function get_declared_in( ReflectionParameter $param ): string {

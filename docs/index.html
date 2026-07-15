@@ -155,7 +155,7 @@ $container-&gt;has( Service::class );</code></pre></div>
 <ul>
 <li>Keep the whole container in a single PHP file.</li>
 <li>Use no external dependencies.</li>
-<li>Register existing objects, classes, and closure factories with <code>set()</code>.</li>
+<li>Register existing objects, classes, closure factories, and configured constructor parameters with <code>set()</code>.</li>
 <li>Autowire registered and unregistered classes.</li>
 <li>Return shared service instances with <code>get()</code>.</li>
 <li>Create a new instance every time with <code>make()</code>.</li>
@@ -170,7 +170,7 @@ $container-&gt;has( Service::class );</code></pre></div>
 </ul>
 <p>Tradeoffs:</p>
 <ul>
-<li>Configuration goes through factories, runtime parameters, or config objects. There is no separate config array.</li>
+<li>Configuration goes through parameters attached to concrete class definitions, factories, runtime parameters, or config objects. There is no standalone scalar storage.</li>
 <li>Invokable objects can be wrapped in closures, but are not factories automatically.</li>
 <li>Configuration is normal PHP code. There are no attributes or DSL.</li>
 </ul>
@@ -178,13 +178,13 @@ $container-&gt;has( Service::class );</code></pre></div>
 <p>Four public methods:</p>
 <ul>
 <li><code>has()</code> checks if a service can be resolved.</li>
-<li><code>set()</code> registers an object, class, or factory.</li>
+<li><code>set()</code> registers an object, class, factory, or named parameters for an instantiable class.</li>
 <li><code>get()</code> returns a shared object.</li>
 <li><code>make()</code> creates a fresh object.</li>
 </ul>
 <p>API:</p>
 <div class="code-block"><div class="code-label"><span>php</span><button class="copy-code" type="button">Copy</button></div><pre><code class="language-php">$container-&gt;has( class-string $id ): bool;
-$container-&gt;set( class-string $id, object|Closure|class-string $service ): void;
+$container-&gt;set( class-string $id, object|Closure|class-string|array&lt;string, mixed&gt; $service ): void;
 $container-&gt;get( class-string $id );
 $container-&gt;make( class-string $id, array $parameters = [] );</code></pre></div>
 <p>Service IDs must be class or interface names. Plain strings like <code>logger</code> are not supported.</p>
@@ -278,6 +278,7 @@ $container-&gt;set( 'logger', File_Logger::class );                // InvalidArg
 <li>existing object - <code>new MyClass()</code></li>
 <li>existing class name - <code>MyClass::class</code></li>
 <li>closure factory - <code>static fn () =&gt; new MyClass()</code></li>
+<li>named parameters for an instantiable class - <code>[ 'parameter_name' =&gt; $value ]</code></li>
 </ul>
 <aside class="callout important"><strong>Important</strong><p>Configure the container before the first <code>get()</code>. Replacing a definition removes the stored instance for that ID, but already-created services are not rebuilt.</p></aside>
 <h4 id="set-register-an-existing-object">set() - Register an existing object<a class="heading-anchor" href="#set-register-an-existing-object" aria-label="Link to this section">#</a></h4>
@@ -286,6 +287,28 @@ $service = $container-&gt;get( Service::class );</code></pre></div>
 <h4 id="set-register-an-interface-implementation">set() - Register an interface implementation<a class="heading-anchor" href="#set-register-an-interface-implementation" aria-label="Link to this section">#</a></h4>
 <div class="code-block"><div class="code-label"><span>php</span><button class="copy-code" type="button">Copy</button></div><pre><code class="language-php">$container-&gt;set( Logger_Interface::class, File_Logger::class );
 $logger = $container-&gt;get( Logger_Interface::class );</code></pre></div>
+<h4 id="set-configure-constructor-parameters">set() - Configure constructor parameters<a class="heading-anchor" href="#set-configure-constructor-parameters" aria-label="Link to this section">#</a></h4>
+<p>An associative array registers persistent named constructor parameters for the instantiable class used as the service ID. The container autowires any omitted class dependencies.</p>
+<div class="code-block"><div class="code-label"><span>php</span><button class="copy-code" type="button">Copy</button></div><pre><code class="language-php">final class Plugin {
+	private string $main_file;
+	private Options $options;
+
+	public function __construct(
+		string $main_file,
+		Options $options
+	) {
+		$this-&gt;main_file = $main_file;
+		$this-&gt;options = $options;
+	}
+}
+
+$container-&gt;set( Plugin::class, [
+	'main_file' =&gt; __FILE__,
+] );
+
+$plugin = $container-&gt;get( Plugin::class );</code></pre></div>
+<p>The configured object is shared like any other result returned by <code>get()</code>. Parameter names are checked when the service is resolved; unknown names throw <code>ContainerException</code>.</p>
+<p>This form only works when the service ID is an instantiable class. For an interface, use a class-string binding when the implementation needs no scalar configuration; otherwise use a factory.</p>
 <h4 id="set-register-a-factory">set() - Register a factory<a class="heading-anchor" href="#set-register-a-factory" aria-label="Link to this section">#</a></h4>
 <p>Factories must return an object.</p>
 <div class="code-block"><div class="code-label"><span>php</span><button class="copy-code" type="button">Copy</button></div><pre><code class="language-php">$container-&gt;set( Client::class, static function () {
@@ -331,6 +354,14 @@ var_dump( $a === $b ); // false</code></pre></div>
 $mailer = $container-&gt;make( Mailer::class, [
 	'from' =&gt; 'admin@example.com',
 ] );</code></pre></div>
+<p>If <code>set()</code> registered configured parameters for the class, <code>make()</code> uses them as defaults and creates a fresh instance. Parameters passed directly to <code>make()</code> take priority:</p>
+<div class="code-block"><div class="code-label"><span>php</span><button class="copy-code" type="button">Copy</button></div><pre><code class="language-php">$container-&gt;set( Mailer::class, [
+	'from' =&gt; 'default@example.com',
+] );
+
+$mailer = $container-&gt;make( Mailer::class, [
+	'from' =&gt; 'override@example.com',
+] );</code></pre></div>
 <h4 id="make-existing-object-definitions">make() - Existing object definitions<a class="heading-anchor" href="#make-existing-object-definitions" aria-label="Link to this section">#</a></h4>
 <p>Definitions registered as existing object instances cannot be used with <code>make()</code>. Use <code>get()</code> to retrieve those instances.</p>
 <div class="code-block"><div class="code-label"><span>php</span><button class="copy-code" type="button">Copy</button></div><pre><code class="language-php">$logger = new Logger();
@@ -351,13 +382,13 @@ $second = $container-&gt;make( ReportController::class );
 var_dump( $first === $second ); // false
 var_dump( $first-&gt;logger === $second-&gt;logger ); // true</code></pre></div>
 <h4 id="make-registered-definitions">make() - Registered definitions<a class="heading-anchor" href="#make-registered-definitions" aria-label="Link to this section">#</a></h4>
-<p>Class-string definitions are instantiated again, and closure factories are invoked on every call.</p>
+<p>Class-string and configured-parameter definitions are instantiated again, and closure factories are invoked on every call.</p>
 <div class="code-block"><div class="code-label"><span>php</span><button class="copy-code" type="button">Copy</button></div><pre><code class="language-php">$container-&gt;set( Mailer::class, static fn () =&gt; new Mailer() );
 
 var_dump( $container-&gt;make( Mailer::class ) === $container-&gt;make( Mailer::class ) ); // false
 var_dump( $container-&gt;get( Mailer::class ) === $container-&gt;get( Mailer::class ) ); // true</code></pre></div>
 <h3 id="comparison-with-other-containers">Comparison with other containers<a class="heading-anchor" href="#comparison-with-other-containers" aria-label="Link to this section">#</a></h3>
-<div class="table-wrap"><table><thead><tr><th>Container</th><th>Deps</th><th>PSR-11</th><th>Autowiring</th><th>Shared services</th><th>New instance method</th><th>Scalars</th><th>Config</th></tr></thead><tbody><tr><td>LiteWire DI</td><td>no</td><td>style</td><td>yes</td><td><code>get()</code></td><td><code>make()</code></td><td>runtime</td><td>no</td></tr><tr><td>PHP-DI</td><td>yes</td><td>yes</td><td>yes</td><td><code>get()</code></td><td><code>make()</code></td><td>yes</td><td>yes</td></tr><tr><td>Symfony DI</td><td>yes</td><td>yes</td><td>yes</td><td><code>get()</code></td><td>factories/services</td><td>yes</td><td>yes</td></tr><tr><td>Laravel Container</td><td>yes</td><td>partly/yes</td><td>yes</td><td><code>singleton(), instance()</code></td><td><code>make()</code></td><td>yes</td><td>yes</td></tr><tr><td>Laminas ServiceManager</td><td>yes</td><td>yes</td><td>yes</td><td>shared services</td><td><code>build()</code></td><td>yes</td><td>yes</td></tr><tr><td>League Container</td><td>yes</td><td>yes</td><td>yes</td><td><code>addShared()</code></td><td>definitions/factories</td><td>yes</td><td>yes</td></tr><tr><td>Yii DI Container</td><td>yes</td><td>no</td><td>yes</td><td><code>setSingleton()</code></td><td><code>get()</code></td><td>yes</td><td>yes</td></tr><tr><td>Pimple</td><td>yes</td><td>no</td><td>no</td><td>default behavior</td><td><code>factory()</code></td><td>yes</td><td>yes</td></tr><tr><td>Nette DI</td><td>yes</td><td>no/adapter</td><td>yes</td><td>generated services</td><td>generated factories</td><td>yes</td><td>yes</td></tr></tbody></table></div>
+<div class="table-wrap"><table><thead><tr><th>Container</th><th>Deps</th><th>PSR-11</th><th>Autowiring</th><th>Shared services</th><th>New instance method</th><th>Scalars</th><th>Config</th></tr></thead><tbody><tr><td>LiteWire DI</td><td>no</td><td>style</td><td>yes</td><td><code>get()</code></td><td><code>make()</code></td><td>definition/runtime</td><td>no</td></tr><tr><td>PHP-DI</td><td>yes</td><td>yes</td><td>yes</td><td><code>get()</code></td><td><code>make()</code></td><td>yes</td><td>yes</td></tr><tr><td>Symfony DI</td><td>yes</td><td>yes</td><td>yes</td><td><code>get()</code></td><td>factories/services</td><td>yes</td><td>yes</td></tr><tr><td>Laravel Container</td><td>yes</td><td>partly/yes</td><td>yes</td><td><code>singleton(), instance()</code></td><td><code>make()</code></td><td>yes</td><td>yes</td></tr><tr><td>Laminas ServiceManager</td><td>yes</td><td>yes</td><td>yes</td><td>shared services</td><td><code>build()</code></td><td>yes</td><td>yes</td></tr><tr><td>League Container</td><td>yes</td><td>yes</td><td>yes</td><td><code>addShared()</code></td><td>definitions/factories</td><td>yes</td><td>yes</td></tr><tr><td>Yii DI Container</td><td>yes</td><td>no</td><td>yes</td><td><code>setSingleton()</code></td><td><code>get()</code></td><td>yes</td><td>yes</td></tr><tr><td>Pimple</td><td>yes</td><td>no</td><td>no</td><td>default behavior</td><td><code>factory()</code></td><td>yes</td><td>yes</td></tr><tr><td>Nette DI</td><td>yes</td><td>no/adapter</td><td>yes</td><td>generated services</td><td>generated factories</td><td>yes</td><td>yes</td></tr></tbody></table></div>
 <p>Best for:</p>
 <ul>
 <li><code>LiteWire DI</code> - simple PHP apps, WP plugins</li>
@@ -387,7 +418,7 @@ var_dump( $container-&gt;get( Mailer::class ) === $container-&gt;get( Mailer::cl
 <li>Union or intersection type resolution.</li>
 <li>Variadic parameter resolution.</li>
 </ul>
-<p>Required scalar constructor parameters must be provided by your code.</p>
+<p>Required scalar constructor parameters must be provided by your code through configured class parameters, a factory, <code>make()</code>, or a configuration object.</p>
 <p>These features would make the API larger. LiteWire DI keeps one strict object model in one small PHP file.</p>
 <p>Full PSR-11 support would require <code>psr/container</code>. LiteWire DI keeps the API style without the dependency. An optional adapter may be added later.</p></section>
 <section class="doc-source doc-guide" data-doc-source="benchmarks/README.md"><header class="guide-header"><p class="section-label">Report</p><h2 id="benchmarks">Benchmarks<a class="heading-anchor" href="#benchmarks" aria-label="Link to this guide">#</a></h2><a class="source-link" href="https://github.com/doiftrue/litewire-di/blob/main/benchmarks/README.md" target="_blank" rel="noreferrer">View Markdown source ↗</a></header><p>Latest detailed performance measurements for LiteWire DI. Timings depend on PHP, hardware, extensions, and system load, so compare runs from the same environment.</p>
@@ -549,7 +580,7 @@ final class PluginConfig {
 	}
 
 }</code></pre></div>
-<p>A configuration object is better than asking the container for string keys. It gives the values clear names and keeps them type-safe.</p>
+<p>A configuration object is better when the same related values are used by several classes. It gives the values clear names and keeps them type-safe. For scalar values used by only one concrete class, <code>set( MyClass::class, [ 'parameter' =&gt; $value ] )</code> is a shorter alternative.</p>
 <h3 id="5-logger-interface-and-implementation">5. Logger interface and implementation<a class="heading-anchor" href="#5-logger-interface-and-implementation" aria-label="Link to this section">#</a></h3>
 <p>Create <code>src/Logger/Logger.php</code>:</p>
 <div class="code-block"><div class="code-label"><span>php</span><button class="copy-code" type="button">Copy</button></div><pre><code class="language-php">&lt;?php
@@ -719,7 +750,8 @@ final class Plugin {
 <ul>
 <li>bind an interface to a concrete class with <code>set()</code>;</li>
 <li>register an existing configured object;</li>
-<li>use a factory for scalar values or third-party APIs.</li>
+<li>attach named scalar parameters to a concrete class with <code>set()</code>;</li>
+<li>use a factory when construction needs custom logic or a third-party API.</li>
 </ul>
 <h3 id="testing-a-class-without-the-container">Testing a class without the container<a class="heading-anchor" href="#testing-a-class-without-the-container" aria-label="Link to this section">#</a></h3>
 <p>The container is object setup, not a requirement inside your classes. A unit test can create <code>SettingsPage</code> directly:</p>
@@ -894,7 +926,35 @@ $some_service = $container-&gt;get( SomeService::class );</code></pre></div>
 <li>bootstrap code has to map array values into objects;</li>
 <li>type errors are discovered later than with direct object creation.</li>
 </ul>
-<h4 id="option-4-use-a-factory-for-scalar-constructor-values">Option 4: use a factory for scalar constructor values<a class="heading-anchor" href="#option-4-use-a-factory-for-scalar-constructor-values" aria-label="Link to this section">#</a></h4>
+<h4 id="option-4-configure-named-constructor-parameters">Option 4: configure named constructor parameters<a class="heading-anchor" href="#option-4-configure-named-constructor-parameters" aria-label="Link to this section">#</a></h4>
+<p>For an instantiable service class with scalar constructor arguments, pass an associative parameter array to <code>set()</code>. The keys must match constructor parameter names. Any omitted class dependencies are autowired.</p>
+<div class="code-block"><div class="code-label"><span>php</span><button class="copy-code" type="button">Copy</button></div><pre><code class="language-php">$container = new Container();
+
+$container-&gt;set( SomeService::class, [
+	'db_host'     =&gt; 'localhost',
+	'db_port'     =&gt; 3306,
+	'db_name'     =&gt; 'my_application',
+	'api_url'     =&gt; 'https://api.example.com',
+	'api_timeout' =&gt; 10,
+	'cache_dir'   =&gt; __DIR__ . '/var/cache',
+	'debug'       =&gt; true,
+] );
+
+$some_service = $container-&gt;get( SomeService::class );</code></pre></div>
+<p>Pros:</p>
+<ul>
+<li>no extra config class or factory is required;</li>
+<li>constructor values stay attached to the class they configure;</li>
+<li>remaining object dependencies are still autowired;</li>
+<li><code>make()</code> can create a fresh instance and override individual configured values.</li>
+</ul>
+<p>Cons:</p>
+<ul>
+<li>parameter names are checked at runtime;</li>
+<li>values are local to this class definition and are not reusable scalar entries;</li>
+<li>an interface whose implementation needs scalar configuration requires a factory because the array does not identify that implementation.</li>
+</ul>
+<h4 id="option-5-use-a-factory-for-scalar-constructor-values">Option 5: use a factory for scalar constructor values<a class="heading-anchor" href="#option-5-use-a-factory-for-scalar-constructor-values" aria-label="Link to this section">#</a></h4>
 <p>If a service should keep scalar constructor arguments, register a factory for that service:</p>
 <div class="code-block"><div class="code-label"><span>php</span><button class="copy-code" type="button">Copy</button></div><pre><code class="language-php">$container = new Container();
 
@@ -923,7 +983,7 @@ $some_service = $container-&gt;get( SomeService::class );</code></pre></div>
 <li>configuration is less reusable in tests and other services;</li>
 <li>large factories become harder to read.</li>
 </ul>
-<p>For small applications, option 1 is usually enough. If the config object becomes too broad, option 2 is the cleaner next step. Options 3 and 4 are useful when your application already has array config files or when a particular service really should keep scalar constructor arguments.</p>
+<p>For small applications, option 1 is usually enough. If the config object becomes too broad, option 2 is the cleaner next step. Option 3 is useful when the application already has array config files. Option 4 is concise when values belong to one concrete class; use option 5 when construction needs custom logic or an interface implementation must be selected at the same time.</p>
 <h3 id="php-di">PHP-DI<a class="heading-anchor" href="#php-di" aria-label="Link to this section">#</a></h3>
 <p>PHP-DI can store values under string IDs such as <code>database.host</code> and <code>app.debug</code>. It can pass those values directly to the service constructor.</p>
 <p>The PHP-DI definition file contains both the values and instructions that connect each value to a constructor argument:</p>
@@ -1060,8 +1120,8 @@ $app-&gt;register( SomeServiceProvider::class );
 $some_service = $app-&gt;make( SomeService::class );</code></pre></div>
 <p><code>$app-&gt;register()</code> creates the provider and calls its <code>register()</code> method. Laravel then reads the configured values and injects them when <code>$app-&gt;make()</code> resolves <code>SomeService</code>.</p>
 <h3 id="are-these-approaches-equivalent">Are these approaches equivalent?<a class="heading-anchor" href="#are-these-approaches-equivalent" aria-label="Link to this section">#</a></h3>
-<p>They create the same <code>SomeService</code> with the same settings. PHP-DI stores individual values and injects them directly. LiteWire DI stores one <code>AppConfig</code> object and uses a factory to pass its values to the service.</p>
-<p>The container features are also not equivalent. PHP-DI stores scalar entries and can reference, combine, and override definitions. LiteWire DI only stores the finished <code>AppConfig</code> object. Loading, combining, validating, or overriding the original values remains application code.</p>
+<p>They create the same <code>SomeService</code> with the same settings. PHP-DI can store individual values and inject them by reference. LiteWire DI either stores typed configuration objects or attaches literal named values directly to one concrete class definition.</p>
+<p>The container features are also not equivalent. PHP-DI stores scalar entries and can reference, combine, and override definitions. LiteWire DI does not expose scalar entries: its configured parameter values belong only to their class definition. Loading, combining, or validating the original values remains application code.</p>
 <p>For a small application, one <code>AppConfig</code> object is often enough. If it becomes too large, split it into focused objects such as <code>DatabaseConfig</code>, <code>ApiConfig</code>, and <code>CacheConfig</code> and register each object in the same way.</p></section>
 				<!-- DOCS:END -->
 			</article>

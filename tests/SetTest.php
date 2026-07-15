@@ -8,6 +8,8 @@ use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
 use Kama\LiteWireDI\Container;
 use Kama\LiteWireDI\Tests\Fixtures\SimpleClass;
+use Kama\LiteWireDI\Tests\Fixtures\SomeInterface;
+use Kama\LiteWireDI\Tests\Fixtures\AbstractService;
 use stdClass;
 
 final class SetTest extends TestCase {
@@ -39,6 +41,12 @@ final class SetTest extends TestCase {
 		$this->container->set( SimpleClass::class, function () {
 			return new SimpleClass();
 		} );
+
+		self::assertTrue( $this->container->has( SimpleClass::class ) );
+	}
+
+	public function test__register_configured_parameters(): void {
+		$this->container->set( SimpleClass::class, [] );
 
 		self::assertTrue( $this->container->has( SimpleClass::class ) );
 	}
@@ -92,6 +100,20 @@ final class SetTest extends TestCase {
 		$this->expectExceptionMessage( 'does not exist' );
 
 		$this->container->set( SimpleClass::class, 'UnknownClass' );
+	}
+
+	public function test__exception_on_configured_parameters_for_interface(): void {
+		$this->expectException( InvalidArgumentException::class );
+		$this->expectExceptionMessage( 'require the service ID to be an instantiable class' );
+
+		$this->container->set( SomeInterface::class, [ 'name' => 'configured' ] );
+	}
+
+	public function test__exception_on_configured_parameters_for_abstract_class(): void {
+		$this->expectException( InvalidArgumentException::class );
+		$this->expectExceptionMessage( 'require the service ID to be an instantiable class' );
+
+		$this->container->set( AbstractService::class, [ 'name' => 'configured' ] );
 	}
 
 	public function test__exception_on_string_id(): void {

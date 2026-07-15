@@ -9,10 +9,11 @@ use RuntimeException;
 use Kama\LiteWireDI\Container;
 use Kama\LiteWireDI\NotFoundException;
 use Kama\LiteWireDI\Tests\Fixtures\SimpleClass;
+use Kama\LiteWireDI\Tests\Fixtures\ClassWithDefaults;
+use Kama\LiteWireDI\Tests\Fixtures\ClassWithRequiredScalarAndDeps;
 use Kama\LiteWireDI\Tests\Fixtures\ClassNoConstructor;
 use Kama\LiteWireDI\Tests\Fixtures\ClassEmptyConstructor;
 use Kama\LiteWireDI\Tests\Fixtures\ClassWithDeps;
-use Kama\LiteWireDI\Tests\Fixtures\ClassWithDefaults;
 use Kama\LiteWireDI\Tests\Fixtures\ClassWithScalarRequired;
 use Kama\LiteWireDI\Tests\Fixtures\ClassDeepA;
 use Kama\LiteWireDI\Tests\Fixtures\ClassDeepB;
@@ -89,6 +90,19 @@ final class GetTest extends TestCase {
 		$result = $this->container->get( stdClass::class );
 
 		self::assertSame( $this->container->get( SimpleClass::class ), $result->simple );
+	}
+
+	public function test__configured_parameters_are_used_with_autowiring(): void {
+		$this->container->set( ClassWithRequiredScalarAndDeps::class, [
+			'name' => 'configured',
+		] );
+
+		$first = $this->container->get( ClassWithRequiredScalarAndDeps::class );
+		$second = $this->container->get( ClassWithRequiredScalarAndDeps::class );
+
+		self::assertSame( 'configured', $first->name );
+		self::assertInstanceOf( SimpleClass::class, $first->simple );
+		self::assertSame( $first, $second );
 	}
 
 	public function test__unregistered_class_auto_resolve(): void {
@@ -207,6 +221,15 @@ final class GetTest extends TestCase {
 		$this->expectExceptionMessage( 'not resolved' );
 
 		$this->container->get( ClassWithScalarRequired::class );
+	}
+
+	public function test__exception__unknown_configured_parameter(): void {
+		$this->container->set( ClassWithDefaults::class, [ 'unknown' => 'value' ] );
+
+		$this->expectException( RuntimeException::class );
+		$this->expectExceptionMessage( 'Unknown parameter(s): `unknown`' );
+
+		$this->container->get( ClassWithDefaults::class );
 	}
 
 	public function test__exception__factory_returns_non_object(): void {

@@ -11,6 +11,7 @@ use Kama\LiteWireDI\NotFoundException;
 use Kama\LiteWireDI\Tests\Fixtures\SimpleClass;
 use Kama\LiteWireDI\Tests\Fixtures\ClassWithDeps;
 use Kama\LiteWireDI\Tests\Fixtures\ClassWithDefaults;
+use Kama\LiteWireDI\Tests\Fixtures\ClassWithRequiredScalarAndDeps;
 use Kama\LiteWireDI\Tests\Fixtures\ClassWithScalarRequired;
 use Kama\LiteWireDI\Tests\Fixtures\ClassDeepA;
 use Kama\LiteWireDI\Tests\Fixtures\SomeInterface;
@@ -99,6 +100,32 @@ final class MakeTest extends TestCase {
 
 		self::assertSame( $custom_simple, $result->simple );
 		self::assertSame( 'custom', $result->simple->name );
+	}
+
+	public function test__uses_configured_parameters(): void {
+		$this->container->set( ClassWithRequiredScalarAndDeps::class, [
+			'name' => 'configured',
+		] );
+
+		$first = $this->container->make( ClassWithRequiredScalarAndDeps::class );
+		$second = $this->container->make( ClassWithRequiredScalarAndDeps::class );
+
+		self::assertSame( 'configured', $first->name );
+		self::assertInstanceOf( SimpleClass::class, $first->simple );
+		self::assertNotSame( $first, $second );
+	}
+
+	public function test__runtime_parameters_override_configured_parameters(): void {
+		$this->container->set( ClassWithRequiredScalarAndDeps::class, [
+			'name' => 'configured',
+		] );
+
+		$result = $this->container->make( ClassWithRequiredScalarAndDeps::class, [
+			'name' => 'runtime',
+		] );
+
+		self::assertSame( 'runtime', $result->name );
+		self::assertInstanceOf( SimpleClass::class, $result->simple );
 	}
 
 	// ────────────────────────────────────────────────────────────────────
@@ -208,14 +235,14 @@ final class MakeTest extends TestCase {
 
 	public function test__exception__unknown_runtime_parameter(): void {
 		$this->expectException( RuntimeException::class );
-		$this->expectExceptionMessage( 'Unknown runtime parameter(s): `unknown`' );
+		$this->expectExceptionMessage( 'Unknown parameter(s): `unknown`' );
 
 		$this->container->make( ClassWithDefaults::class, [ 'unknown' => 'value' ] );
 	}
 
 	public function test__exception__runtime_parameter_for_class_without_constructor(): void {
 		$this->expectException( RuntimeException::class );
-		$this->expectExceptionMessage( 'has no constructor and does not accept runtime parameters' );
+		$this->expectExceptionMessage( 'has no constructor and does not accept parameters' );
 
 		$this->container->make( SimpleClass::class, [ 'unknown' => 'value' ] );
 	}

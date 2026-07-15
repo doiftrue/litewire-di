@@ -32,7 +32,7 @@ Features
 
 - Keep the whole container in a single PHP file.
 - Use no external dependencies.
-- Register existing objects, classes, and closure factories with `set()`.
+- Register existing objects, classes, closure factories, and configured constructor parameters with `set()`.
 - Autowire registered and unregistered classes.
 - Return shared service instances with `get()`.
 - Create a new instance every time with `make()`.
@@ -47,7 +47,7 @@ Features
 
 Tradeoffs:
 
-- Configuration goes through factories, runtime parameters, or config objects. There is no separate config array.
+- Configuration goes through parameters attached to concrete class definitions, factories, runtime parameters, or config objects. There is no standalone scalar storage.
 - Invokable objects can be wrapped in closures, but are not factories automatically.
 - Configuration is normal PHP code. There are no attributes or DSL.
 
@@ -57,14 +57,14 @@ Usage Guide
 Four public methods:
 
 - `has()` checks if a service can be resolved.
-- `set()` registers an object, class, or factory.
+- `set()` registers an object, class, factory, or named parameters for an instantiable class.
 - `get()` returns a shared object.
 - `make()` creates a fresh object.
 
 API:
 ```php
 $container->has( class-string $id ): bool;
-$container->set( class-string $id, object|Closure|class-string $service ): void;
+$container->set( class-string $id, object|Closure|class-string|array<string, mixed> $service ): void;
 $container->get( class-string $id );
 $container->make( class-string $id, array $parameters = [] );
 ```
@@ -209,6 +209,7 @@ Accepted values:
 * existing object - `new MyClass()`
 * existing class name - `MyClass::class`
 * closure factory - `static fn () => new MyClass()`
+* named parameters for an instantiable class - `[ 'parameter_name' => $value ]`
 
 > [!IMPORTANT]
 > Configure the container before the first `get()`. Replacing a definition removes the stored instance for that ID, but already-created services are not rebuilt.
@@ -226,6 +227,36 @@ $service = $container->get( Service::class );
 $container->set( Logger_Interface::class, File_Logger::class );
 $logger = $container->get( Logger_Interface::class );
 ```
+
+
+### set() - Configure constructor parameters
+
+An associative array registers persistent named constructor parameters for the instantiable class used as the service ID. The container autowires any omitted class dependencies.
+
+```php
+final class Plugin {
+	private string $main_file;
+	private Options $options;
+
+	public function __construct(
+		string $main_file,
+		Options $options
+	) {
+		$this->main_file = $main_file;
+		$this->options = $options;
+	}
+}
+
+$container->set( Plugin::class, [
+	'main_file' => __FILE__,
+] );
+
+$plugin = $container->get( Plugin::class );
+```
+
+The configured object is shared like any other result returned by `get()`. Parameter names are checked when the service is resolved; unknown names throw `ContainerException`.
+
+This form only works when the service ID is an instantiable class. For an interface, use a class-string binding when the implementation needs no scalar configuration; otherwise use a factory.
 
 
 ### set() - Register a factory
@@ -302,6 +333,18 @@ $mailer = $container->make( Mailer::class, [
 ] );
 ```
 
+If `set()` registered configured parameters for the class, `make()` uses them as defaults and creates a fresh instance. Parameters passed directly to `make()` take priority:
+
+```php
+$container->set( Mailer::class, [
+	'from' => 'default@example.com',
+] );
+
+$mailer = $container->make( Mailer::class, [
+	'from' => 'override@example.com',
+] );
+```
+
 
 ### make() - Existing object definitions
 Definitions registered as existing object instances cannot be used with `make()`. Use `get()` to retrieve those instances.
@@ -333,7 +376,7 @@ var_dump( $first->logger === $second->logger ); // true
 
 
 ### make() - Registered definitions
-Class-string definitions are instantiated again, and closure factories are invoked on every call.
+Class-string and configured-parameter definitions are instantiated again, and closure factories are invoked on every call.
 
 ```php
 $container->set( Mailer::class, static fn () => new Mailer() );
@@ -349,7 +392,7 @@ Comparison with other containers
 
 | Container              | Deps |     PSR-11 | Autowiring |           Shared services |   New instance method | Scalars | Config |
 |------------------------|-----:|-----------:|-----------:|--------------------------:|----------------------:|--------:|-------:|
-| LiteWire DI            |   no |      style |        yes |                   `get()` |              `make()` | runtime |     no |
+| LiteWire DI            |   no |      style |        yes |                   `get()` |              `make()` | definition/runtime |     no |
 | PHP-DI                 |  yes |        yes |        yes |                   `get()` |              `make()` |     yes |    yes |
 | Symfony DI             |  yes |        yes |        yes |                   `get()` |    factories/services |     yes |    yes |
 | Laravel Container      |  yes | partly/yes |        yes | `singleton(), instance()` |              `make()` |     yes |    yes |
@@ -390,7 +433,7 @@ LiteWire DI does not include:
 - Union or intersection type resolution.
 - Variadic parameter resolution.
 
-Required scalar constructor parameters must be provided by your code.
+Required scalar constructor parameters must be provided by your code through configured class parameters, a factory, `make()`, or a configuration object.
 
 These features would make the API larger. LiteWire DI keeps one strict object model in one small PHP file.
 

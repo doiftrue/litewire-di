@@ -208,7 +208,40 @@ Cons:
 - bootstrap code has to map array values into objects;
 - type errors are discovered later than with direct object creation.
 
-### Option 4: use a factory for scalar constructor values
+### Option 4: configure named constructor parameters
+
+For an instantiable service class with scalar constructor arguments, pass an associative parameter array to `set()`. The keys must match constructor parameter names. Any omitted class dependencies are autowired.
+
+```php
+$container = new Container();
+
+$container->set( SomeService::class, [
+	'db_host'     => 'localhost',
+	'db_port'     => 3306,
+	'db_name'     => 'my_application',
+	'api_url'     => 'https://api.example.com',
+	'api_timeout' => 10,
+	'cache_dir'   => __DIR__ . '/var/cache',
+	'debug'       => true,
+] );
+
+$some_service = $container->get( SomeService::class );
+```
+
+Pros:
+
+- no extra config class or factory is required;
+- constructor values stay attached to the class they configure;
+- remaining object dependencies are still autowired;
+- `make()` can create a fresh instance and override individual configured values.
+
+Cons:
+
+- parameter names are checked at runtime;
+- values are local to this class definition and are not reusable scalar entries;
+- an interface whose implementation needs scalar configuration requires a factory because the array does not identify that implementation.
+
+### Option 5: use a factory for scalar constructor values
 
 If a service should keep scalar constructor arguments, register a factory for that service:
 
@@ -242,7 +275,7 @@ Cons:
 - configuration is less reusable in tests and other services;
 - large factories become harder to read.
 
-For small applications, option 1 is usually enough. If the config object becomes too broad, option 2 is the cleaner next step. Options 3 and 4 are useful when your application already has array config files or when a particular service really should keep scalar constructor arguments.
+For small applications, option 1 is usually enough. If the config object becomes too broad, option 2 is the cleaner next step. Option 3 is useful when the application already has array config files. Option 4 is concise when values belong to one concrete class; use option 5 when construction needs custom logic or an interface implementation must be selected at the same time.
 
 
 PHP-DI
@@ -425,8 +458,8 @@ $some_service = $app->make( SomeService::class );
 Are these approaches equivalent?
 ---------------------
 
-They create the same `SomeService` with the same settings. PHP-DI stores individual values and injects them directly. LiteWire DI stores one `AppConfig` object and uses a factory to pass its values to the service.
+They create the same `SomeService` with the same settings. PHP-DI can store individual values and inject them by reference. LiteWire DI either stores typed configuration objects or attaches literal named values directly to one concrete class definition.
 
-The container features are also not equivalent. PHP-DI stores scalar entries and can reference, combine, and override definitions. LiteWire DI only stores the finished `AppConfig` object. Loading, combining, validating, or overriding the original values remains application code.
+The container features are also not equivalent. PHP-DI stores scalar entries and can reference, combine, and override definitions. LiteWire DI does not expose scalar entries: its configured parameter values belong only to their class definition. Loading, combining, or validating the original values remains application code.
 
 For a small application, one `AppConfig` object is often enough. If it becomes too large, split it into focused objects such as `DatabaseConfig`, `ApiConfig`, and `CacheConfig` and register each object in the same way.

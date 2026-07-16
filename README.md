@@ -24,7 +24,8 @@ Install with Composer:
 composer require doiftrue/litewire-di
 ```
 
-Or copy the single [`Container.php`](Container.php) file into your project.
+Or copy the single [`Container.php`](Container.php) file into your project. When copying it, change the `Kama\LiteWireDI` namespace to one owned by your project to avoid collisions with another copy of the container.
+
 
 
 Compatibility

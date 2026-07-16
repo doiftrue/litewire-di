@@ -141,6 +141,10 @@ $service = $container-&gt;get( Service::class );</code></pre>
 				<!-- DOCS:START -->
 <section class="doc-source doc-overview" data-doc-source="docs/content/overview.md"><h2 id="litewire-di-container">LiteWire DI Container<a class="heading-anchor" href="#litewire-di-container" aria-label="Link to this section">#</a></h2>
 <p>A tiny single-file autowiring DI container for PHP and WordPress.</p>
+<h3 id="installation">Installation<a class="heading-anchor" href="#installation" aria-label="Link to this section">#</a></h3>
+<p>Install with Composer:</p>
+<div class="code-block"><div class="code-label"><span>bash</span><button class="copy-code" type="button">Copy</button></div><pre><code class="language-bash">composer require doiftrue/litewire-di</code></pre></div>
+<p>Or copy the single <a href="https://github.com/doiftrue/litewire-di/blob/main/Container.php" target="_blank" rel="noreferrer"><code>Container.php</code></a> file into your project. When copying it, change the <code>Kama\LiteWireDI</code> namespace to one owned by your project to avoid collisions with another copy of the container.</p>
 <h3 id="compatibility">Compatibility<a class="heading-anchor" href="#compatibility" aria-label="Link to this section">#</a></h3>
 <p>PHP 7.4 and PHP 8.0-8.5 are tested in CI.</p>
 <h3 id="design-goals">Design goals<a class="heading-anchor" href="#design-goals" aria-label="Link to this section">#</a></h3>

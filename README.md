@@ -1,9 +1,9 @@
+![Dependencies: none](https://img.shields.io/badge/dependencies-none-green.svg)
+![PHP 7.4 and 8.x](https://img.shields.io/badge/PHP-7.4%20%7C%208.x-777bb4.svg)
+![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)
 ![PHPUnit 100%](https://img.shields.io/badge/PHPUnit-100%25-green.svg)
 ![PHPStan level 9](https://img.shields.io/badge/PHPStan-level%209-green.svg)
-![PHP 7.4 and 8.x](https://img.shields.io/badge/PHP-7.4%20%7C%208.x-777bb4.svg)
-![Dependencies: none](https://img.shields.io/badge/dependencies-none-green.svg)
-![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)
-[![Last CI](https://github.com/doiftrue/litewire-di/actions/workflows/ci.yml/badge.svg)](https://github.com/doiftrue/litewire-di/actions/workflows/ci.yml)
+[![Tests & Analysis](https://img.shields.io/github/actions/workflow/status/doiftrue/litewire-di/ci.yml?label=Tests%20%26%20Analysis)](https://github.com/doiftrue/litewire-di/actions/workflows/ci.yml)
 
 LiteWire DI Container
 =====================

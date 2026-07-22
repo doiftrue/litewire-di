@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title">
   <title id="title">LiteWire DI</title>
   <rect width="64" height="64" rx="12" fill="#e69a68"/>
-  <path fill="#2b1a12" d="M15 17h8v23h14v7H15zm26 0h8v30h-8z"/>
+  <text x="32" y="42" fill="#2b1a12" font-family="Arial, Helvetica, sans-serif" font-size="29" font-weight="700" letter-spacing="-1" text-anchor="middle" transform="translate(32 32) scale(1 1.3) translate(-32 -32)">LW</text>
 </svg>

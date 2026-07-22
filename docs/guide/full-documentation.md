@@ -40,31 +40,6 @@ That keeps migration to a larger container straightforward.
 It does not implement `Psr\Container\ContainerInterface` and does not require `psr/container`.
 
 
-Features
---------
-
-- Keep the whole container in a single PHP file.
-- Use no external dependencies.
-- Register existing objects, classes, closure factories, and configured constructor parameters with `set()`.
-- Autowire registered and unregistered classes.
-- Return shared service instances with `get()`.
-- Create a new instance every time with `make()`.
-- Pass named runtime parameters to `make()`.
-- Check whether classes and interfaces can be resolved with `has()`.
-- Use an object-first design with class and interface names as service IDs.
-- Use default values for scalar constructor parameters.
-- Use the modern Reflection API on PHP 8.
-- Inject the container itself as a dependency.
-- Cache Reflection data inside each container instance.
-- Detect circular dependencies and show the full resolution chain.
-
-Tradeoffs:
-
-- Configuration goes through parameters attached to concrete class definitions, factories, runtime parameters, or config objects. There is no standalone scalar storage.
-- Invokable objects can be wrapped in closures, but are not factories automatically.
-- Configuration is normal PHP code. There are no attributes or DSL.
-
-
 Usage Guide
 -----------
 Four public methods:

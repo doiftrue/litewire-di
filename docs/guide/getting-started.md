@@ -4,7 +4,11 @@ LiteWire DI is a tiny single-file autowiring container for PHP applications, lib
 
 ## Requirements
 
-LiteWire DI supports PHP 7.4 and PHP 8.0–8.5. Install it with Composer:
+LiteWire DI supports PHP 7.4 and PHP 8.0–8.5.
+
+## Installation
+
+Install it with Composer:
 
 ```bash
 composer require doiftrue/litewire-di
@@ -38,6 +42,29 @@ $container->get( ReportService::class )->generate();
 ```
 
 Neither class is registered. `get()` reflects `ReportService`, sees its `Logger` dependency, creates it, and stores the completed `ReportService` as a shared instance.
+
+## Features
+
+- Keep the whole container in a single PHP file.
+- Use no external dependencies.
+- Register existing objects, classes, closure factories, and configured constructor parameters with `set()`.
+- Autowire registered and unregistered classes.
+- Return shared service instances with `get()`.
+- Create a new instance every time with `make()`.
+- Pass named runtime parameters to `make()`.
+- Check whether classes and interfaces can be resolved with `has()`.
+- Use an object-first design with class and interface names as service IDs.
+- Use default values for scalar constructor parameters.
+- Use the modern Reflection API on PHP 8.
+- Inject the container itself as a dependency.
+- Cache Reflection data inside each container instance.
+- Detect circular dependencies and show the full resolution chain.
+
+## Tradeoffs
+
+- Configuration goes through parameters attached to concrete class definitions, factories, runtime parameters, or config objects. There is no standalone scalar storage.
+- Invokable objects can be wrapped in closures, but are not factories automatically.
+- Configuration is normal PHP code. There are no attributes or DSL (domain-specific language).
 
 ---
 

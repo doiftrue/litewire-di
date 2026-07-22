@@ -3,20 +3,20 @@ import { defineConfig } from 'vitepress';
 const guideSidebar = [
 	{ text: 'Getting started', link: '/guide/getting-started' },
 	{ text: 'Using the container', link: '/guide/using-the-container' },
-	{ text: 'Configuring services', link: '/guide/configuration-and-factories' },
+	{ text: 'Configuring services', link: '/guide/configuring-services' },
 ];
 
-const resourcesSidebar = [
-	{ text: 'Container comparison', link: '/reference/comparison' },
-	{ text: 'Limitations', link: '/reference/limitations' },
-	{ text: 'Benchmarks', link: '/reference/benchmarks' },
-	{ text: 'FAQ and support', link: '/reference/faq' },
+const docSidebar = [
+	{ text: 'Container guide', link: '/documentation/full-documentation' },
+	{ text: 'Configuration cookbook', link: '/documentation/full-configuration' },
+	{ text: 'WordPress example', link: '/documentation/full-wordpress' },
 ];
 
-const documentationSidebar = [
-	{ text: 'Container guide', link: '/guide/full-documentation' },
-	{ text: 'Configuration cookbook', link: '/guide/full-configuration' },
-	{ text: 'WordPress example', link: '/guide/full-wordpress' },
+const moreSidebar = [
+	{ text: 'Container comparison', link: '/more/comparison' },
+	{ text: 'Limitations', link: '/more/limitations' },
+	{ text: 'Benchmarks', link: '/more/benchmarks' },
+	{ text: 'FAQ and support', link: '/more/faq' },
 ];
 
 export default defineConfig( {
@@ -35,14 +35,14 @@ export default defineConfig( {
 		},
 		nav: [
 			{ text: 'Guide', link: '/guide/getting-started' },
-			{ text: 'Documentation', link: '/guide/full-documentation' },
-			{ text: 'Benchmarks', link: '/reference/benchmarks' },
+			{ text: 'Documentation', link: '/documentation/full-documentation' },
+			{ text: 'Benchmarks', link: '/more/benchmarks' },
 			{ text: 'Packagist', link: 'https://packagist.org/packages/doiftrue/litewire-di' },
 		],
 		sidebar: [
 			{ text: 'Guides', items: guideSidebar },
-			{ text: 'Documentation', items: documentationSidebar },
-			{ text: 'More', items: resourcesSidebar },
+			{ text: 'Documentation', items: docSidebar },
+			{ text: 'More', items: moreSidebar },
 		],
 		socialLinks: [
 			{ icon: 'github', link: 'https://github.com/doiftrue/litewire-di' },

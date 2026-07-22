@@ -8,6 +8,8 @@ Service IDs are existing class or interface names. Arbitrary string IDs such as 
 
 `get()` creates a service once and returns the same object on later calls.
 
+Use it for application services that should be shared for the lifetime of this container.
+
 ```php
 $first = $container->get( ReportService::class );
 $second = $container->get( ReportService::class );
@@ -15,17 +17,15 @@ $second = $container->get( ReportService::class );
 var_dump( $first === $second ); // true
 ```
 
-Use it for application services that should be shared for the lifetime of this container.
-
 ## `make()` — create a fresh service
 
 `make()` resolves the class or its registered definition but never stores the root object.
 
 ```php
-$preview = $container->make( ReportService::class );
-$anotherPreview = $container->make( ReportService::class );
+$preview  = $container->make( ReportService::class );
+$preview2 = $container->make( ReportService::class );
 
-var_dump( $preview === $anotherPreview ); // false
+var_dump( $preview === $preview2 ); // false
 ```
 
 Pass named runtime values when a constructor needs a scalar value:
@@ -62,10 +62,10 @@ $container->set( LoggerInterface::class, FileLogger::class );
 Replacing a definition removes the stored object for that ID. It does not rebuild services that were already created and received the old object.
 :::
 
-See [configuring services](/guide/configuration-and-factories) for each registration form.
+See [configuring services](/guide/configuring-services) for each registration form.
 
 ---
 
 ::: info Full documentation
-For every supported behavior, edge case, exception, and complete example, continue to the [container guide](/guide/full-documentation).
+For every supported behavior, edge case, exception, and complete example, continue to the [container guide](/documentation/full-documentation).
 :::

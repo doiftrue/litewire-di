@@ -14,7 +14,7 @@ hero:
       link: /guide/getting-started
     - theme: alt
       text: Documentation
-      link: /guide/full-documentation
+      link: /documentation/full-documentation
 
 features:
   - title: Portable
@@ -33,4 +33,4 @@ Install the package, create a container, and request a concrete class. LiteWire 
 composer require doiftrue/litewire-di
 ```
 
-Read the [getting-started guide](/guide/getting-started) for a short example, or continue to the full [container documentation](/guide/full-documentation).
+Read the [getting-started guide](/guide/getting-started) for a short example, or continue to the full [container documentation](/documentation/full-documentation).

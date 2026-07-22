@@ -83,5 +83,5 @@ Configure services before the first `get()`. Replacing a definition later does n
 ---
 
 ::: info More configuration approaches
-See the [configuration cookbook](/guide/full-configuration) for configuration objects, reusable settings, array mapping, factories, and comparisons with other containers.
+See the [configuration cookbook](/documentation/full-configuration) for configuration objects, reusable settings, array mapping, factories, and comparisons with other containers.
 :::

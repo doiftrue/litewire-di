@@ -165,8 +165,8 @@ Documentation
 -------------
 
 - [Full documentation](https://doiftrue.github.io/litewire-di/)
-- [Configuration guide](https://doiftrue.github.io/litewire-di/guide/configuration-and-factories)
-- [WordPress plugin guide](https://doiftrue.github.io/litewire-di/guide/full-wordpress)
+- [Configuration guide](https://doiftrue.github.io/litewire-di/guide/configuring-services)
+- [WordPress plugin guide](https://doiftrue.github.io/litewire-di/documentation/full-wordpress)
 - [Detailed benchmark report](benchmarks/README.md)
 
 
@@ -216,7 +216,7 @@ Limitations
 
 LiteWire DI keeps the API small. There is no compiled container, service providers, scopes, tags, standalone scalar storage, string service IDs, or config format. Pass required scalar values as configured class parameters, factory arguments, `make()` parameters, or through a config object.
 
-See the [full documentation](https://doiftrue.github.io/litewire-di/reference/limitations) for the detailed list.
+See the [full documentation](https://doiftrue.github.io/litewire-di/more/limitations) for the detailed list.
 
 
 Inspired by

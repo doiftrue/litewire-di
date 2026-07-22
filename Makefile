@@ -10,6 +10,14 @@ define php_run
 	exit $$status
 endef
 
+define node_run
+	@docker run --rm --init $(1) --name LITEWIRE_DI__node \
+		--user node \
+		-v "$(CURDIR):/usr/src/app" \
+		-w /usr/src/app \
+		node:24-alpine sh -c "$(2)"
+endef
+
 php.connect:
 	$(call php_run, -it, sh)
 
@@ -31,6 +39,15 @@ phpstan:
 
 benchmark:
 	$(call php_run,, composer install --working-dir=benchmarks --no-interaction --prefer-dist --no-progress && composer run --working-dir=benchmarks benchmark)
+
+docs.install:
+	$(call node_run,, npm --prefix docs ci)
+
+docs.build:
+	$(call node_run,, npm --prefix docs run build)
+
+docs.dev:
+	$(call node_run,-p 127.0.0.1:5173:5173, npm --prefix docs run dev -- --host 0.0.0.0)
 
 # make php.run code='echo "Hello World!\n";'
 php.run:

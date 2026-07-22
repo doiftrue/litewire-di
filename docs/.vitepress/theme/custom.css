@@ -1,0 +1,27 @@
+:root {
+	--vp-c-brand-1: #a84f20;
+	--vp-c-brand-2: #8f3f16;
+	--vp-c-brand-3: #73300c;
+	--vp-c-brand-soft: #f4d7c5;
+}
+
+.dark {
+	--vp-c-brand-1: #e69a68;
+	--vp-c-brand-2: #ffc39b;
+	--vp-c-brand-3: #cf7f4b;
+	--vp-c-brand-soft: #68422f;
+}
+
+.VPNavBarTitle .logo {
+	border-radius: 6px;
+}
+
+.VPButton.brand {
+	border-color: var(--vp-c-brand-1);
+	background-color: var(--vp-c-brand-1);
+}
+
+.VPButton.brand:hover {
+	border-color: var(--vp-c-brand-2);
+	background-color: var(--vp-c-brand-2);
+}

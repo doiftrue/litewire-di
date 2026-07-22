@@ -1,9 +1,12 @@
 /vendor/
 /tmp/
 
+/docs/node_modules/
+/docs/.vitepress/cache/
+/docs/.vitepress/dist/
+
 /benchmarks/vendor/
 /benchmarks/composer.lock
 
 /composer.lock
 /__*
-

@@ -14,7 +14,11 @@ Install it with Composer:
 composer require doiftrue/litewire-di
 ```
 
-Alternatively, copy [`Container.php`](https://github.com/doiftrue/litewire-di/blob/main/Container.php) into your project. Change its `Kama\LiteWireDI` namespace to one owned by your project, so it cannot conflict with another copied version.
+Alternatively, copy [`Container.php`](https://github.com/doiftrue/litewire-di/blob/main/Container.php) into your project.
+
+::: warning Use your own namespace
+When copying the file, change its `Kama\LiteWireDI` namespace to one owned by your project so it cannot conflict with another copied version.
+:::
 
 ## Resolve your first service
 

@@ -1,6 +1,8 @@
 # Using the container
 
+::: warning Service IDs
 Service IDs are existing class or interface names. Arbitrary string IDs such as `logger` are not supported.
+:::
 
 ## `get()` — resolve a shared service
 
@@ -56,7 +58,11 @@ Register interface bindings, existing objects, class aliases, closure factories,
 $container->set( LoggerInterface::class, FileLogger::class );
 ```
 
-Replacing a definition removes the stored object for that ID. It does not rebuild services that were already created and received the old object. See [configuration and factories](/guide/configuration-and-factories) for each registration form.
+::: warning Configure before resolving
+Replacing a definition removes the stored object for that ID. It does not rebuild services that were already created and received the old object.
+:::
+
+See [configuring services](/guide/configuration-and-factories) for each registration form.
 
 ---
 

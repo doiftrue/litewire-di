@@ -16,7 +16,9 @@ The container helps with this object setup:
 - shared objects are reused;
 - tests can create a class with fake dependencies without loading WordPress.
 
-The container should be used during plugin startup. Do not pass it into every class. Normal classes should ask for their real dependencies in the constructor.
+::: info Keep the container at startup
+Use the container during plugin startup. Do not pass it into every class. Normal classes should ask for their real dependencies in the constructor.
+:::
 
 ## Project structure
 
@@ -46,7 +48,9 @@ my-plugin/lib/Container.php
 
 The plugin now owns its copy of the container. Users do not need to install LiteWire DI or run Composer on their WordPress site.
 
+::: warning Updating a copied container
 When you update LiteWire DI, replace this file with the new version and test the plugin. Keep the license and source information at the top of the file.
+:::
 
 ## 2. Main plugin file
 
@@ -93,7 +97,9 @@ function example_my_plugin_init(): void {
 
 This is the composition root: the one place where the application is assembled. Interface bindings and project values belong here.
 
+::: warning Configure before resolving
 Configure everything before calling `get()`. `get()` stores shared objects, so changing a definition later will not update objects which were already created.
+:::
 
 
 ## 3. Autoloader

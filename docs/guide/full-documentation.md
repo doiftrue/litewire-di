@@ -57,7 +57,9 @@ $container->get( class-string $id );
 $container->make( class-string $id, array $parameters = [] );
 ```
 
+::: warning Service IDs
 Service IDs must be class or interface names. Plain strings like `logger` are not supported.
+:::
 
 
 ### Usage Example
@@ -148,7 +150,9 @@ var_dump( $a === $b ); // true
 
 ### get() - Scalar values
 
+::: warning Required scalar values
 Required scalar values cannot be autowired. They throw `ContainerException`.
+:::
 
 ```php
 final class Config {
@@ -197,8 +201,9 @@ Accepted values:
 * closure factory - `static fn () => new MyClass()`
 * named parameters for an instantiable class - `[ 'parameter_name' => $value ]`
 
-> [!IMPORTANT]
-> Configure the container before the first `get()`. Replacing a definition removes the stored instance for that ID, but already-created services are not rebuilt.
+::: warning Configure before resolving
+Configure the container before the first `get()`. Replacing a definition removes the stored instance for that ID, but already-created services are not rebuilt.
+:::
 
 
 ### set() - Register an existing object
@@ -236,11 +241,16 @@ $plugin = $container->get( Plugin::class );
 
 The configured object is shared like any other result returned by `get()`. Parameter names are checked when the service is resolved; unknown names throw `ContainerException`.
 
-This form only works when the service ID is an instantiable class. For an interface, use a class-string binding when the implementation needs no scalar configuration; otherwise use a factory.
+::: warning Concrete classes only
+Configured parameter arrays only work when the service ID is an instantiable class. For an interface, use a class-string binding when the implementation needs no scalar configuration; otherwise use a factory.
+:::
 
 
 ### set() - Register a factory
+
+::: warning Factory contract
 Factories must return an object.
+:::
 
 ```php
 $container->set( Client::class, static function () {
@@ -327,7 +337,9 @@ $mailer = $container->make( Mailer::class, [
 
 
 ### make() - Existing object definitions
+::: warning Existing objects are shared
 Definitions registered as existing object instances cannot be used with `make()`. Use `get()` to retrieve those instances.
+:::
 
 ```php
 $logger = new Logger();

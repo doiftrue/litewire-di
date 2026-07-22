@@ -100,8 +100,9 @@ Cons:
 - `SomeService` depends on the whole `AppConfig` object;
 - a large `AppConfig` can become a bag of unrelated settings.
 
-> [!INFO]
-> `AppConfig` contains values but no application logic. It is `readonly`, so services cannot accidentally change the settings after startup. The class and its values are both visible in one file.
+::: info Why readonly?
+`AppConfig` contains values but no application logic. It is `readonly`, so services cannot accidentally change the settings after startup. The class and its values are both visible in one file.
+:::
 
 ### Option 2: split config into focused objects
 
@@ -163,7 +164,11 @@ Cons:
 
 ### Option 3: configure named constructor parameters
 
-For an instantiable service class with scalar constructor arguments, `config.php` can return an associative parameter array that is passed directly to `set()`. The keys must match constructor parameter names. Any omitted class dependencies are autowired.
+For an instantiable service class with scalar constructor arguments, `config.php` can return an associative parameter array that is passed directly to `set()`. Any omitted class dependencies are autowired.
+
+::: warning Parameter names
+Array keys must exactly match constructor parameter names.
+:::
 
 file: `config.php`
 ```php
@@ -364,12 +369,13 @@ $container->compile();
 $some_service = $container->get( SomeService::class );
 ```
 
-> [!INFO]
-> The bootstrap code creates the container, loads `services.yaml`, and compiles all definitions.
-> 
-> Symfony resolves every `%parameter%` reference while compiling the container.
-> 
-> `public: true` is used only so this small example can call `get()` directly. Application services are normally private and injected into other services.
+::: info How this Symfony example works
+The bootstrap code creates the container, loads `services.yaml`, and compiles all definitions.
+
+Symfony resolves every `%parameter%` reference while compiling the container.
+
+`public: true` is used only so this small example can call `get()` directly. Application services are normally private and injected into other services.
+:::
 
 
 Laravel Container

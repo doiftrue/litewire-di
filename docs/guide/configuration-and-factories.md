@@ -72,9 +72,13 @@ $container->set( Logger::class, static function () {
 } );
 ```
 
+::: warning Factory contract
 The factory must return an object. Its class-typed parameters are autowired, so it can request other services when needed.
+:::
 
+::: warning Configure before resolving
 Configure services before the first `get()`. Replacing a definition later does not rebuild objects that have already received the old dependency.
+:::
 
 ---
 

@@ -1,30 +1,5 @@
 import { defineConfig } from 'vitepress';
 
-const guideSidebar = [
-	{ text: 'Getting started', link: '/guide/getting-started' },
-	{
-		text: 'Usage',
-		link: '/guide/usage',
-		items: [
-			{ text: 'has()', link: '/guide/usage#has' },
-			{ text: 'get()', link: '/guide/usage#get' },
-			{ text: 'set()', link: '/guide/usage#set' },
-			{ text: 'make()', link: '/guide/usage#make' },
-		],
-	},
-	{ text: 'App config options', link: '/guide/app-config-options' },
-	{ text: 'WordPress example', link: '/guide/full-wordpress' },
-	{ text: 'Namespace prefix', link: '/guide/namespaces' },
-];
-
-const resourcesSidebar = [
-	{ text: 'Container comparison', link: '/reference/comparison' },
-	{ text: 'App config comparison', link: '/reference/app-config-comparison' },
-	{ text: 'Limitations', link: '/reference/limitations' },
-	{ text: 'Benchmarks', link: '/reference/benchmarks' },
-	{ text: 'FAQ and support', link: '/reference/faq' },
-];
-
 export default defineConfig( {
 	lang: 'en-US',
 	title: 'LiteWire DI',
@@ -62,8 +37,29 @@ export default defineConfig( {
 			{ text: 'Packagist', link: 'https://packagist.org/packages/doiftrue/litewire-di' },
 		],
 		sidebar: [
-			{ text: 'Guides', items: guideSidebar },
-			{ text: 'More', items: resourcesSidebar },
+			{ text: 'Guides', items: [
+				{ text: 'Getting started', link: '/guide/getting-started' },
+				{
+					text: 'Usage',
+					link: '/guide/usage',
+					items: [
+						{ text: 'has()', link: '/guide/usage#has' },
+						{ text: 'get()', link: '/guide/usage#get' },
+						{ text: 'set()', link: '/guide/usage#set' },
+						{ text: 'make()', link: '/guide/usage#make' },
+					],
+				},
+				{ text: 'App config options', link: '/guide/app-config-options' },
+				{ text: 'WordPress example', link: '/guide/full-wordpress' },
+				{ text: 'Namespace prefix', link: '/guide/namespaces' },
+			] },
+			{ text: 'More', items: [
+				{ text: 'Container comparison', link: '/reference/comparison' },
+				{ text: 'App config comparison', link: '/reference/app-config-comparison' },
+				{ text: 'Limitations', link: '/reference/limitations' },
+				{ text: 'Benchmarks', link: '/reference/benchmarks' },
+				{ text: 'FAQ and support', link: '/reference/faq' },
+			] },
 		],
 		socialLinks: [
 			{ icon: 'github', link: 'https://github.com/doiftrue/litewire-di' },

@@ -3,6 +3,8 @@
 	--vp-c-brand-2: #8f3f16;
 	--vp-c-brand-3: #73300c;
 	--vp-c-brand-soft: #f4d7c5;
+	--vp-custom-block-tip-bg: #e6f4ff;
+	--vp-custom-block-tip-code-bg: #cfe8fa;
 }
 
 .dark {
@@ -10,6 +12,8 @@
 	--vp-c-brand-2: #ffc39b;
 	--vp-c-brand-3: #cf7f4b;
 	--vp-c-brand-soft: #68422f;
+	--vp-custom-block-tip-bg: #163247;
+	--vp-custom-block-tip-code-bg: #24475e;
 }
 
 .VPNavBarTitle .logo {
@@ -26,11 +30,18 @@
 	background-color: var(--vp-c-brand-2);
 }
 
-.vp-doc table {
-	font-size: 90%;
-}
+.vp-doc {
+	table { font-size: 90%; }
+	th, td { padding: 6px 8px; }
 
-.vp-doc th,
-.vp-doc td {
-	padding: 6px 8px;
+	.custom-block {
+		> ul:first-of-type { margin-top: 0; }
+		> ul:last-of-type { margin-bottom: 8px; }
+
+		&.no-title { padding: 16px;
+			> :last-child {
+				margin-bottom: 0;
+			}
+		}
+	}
 }

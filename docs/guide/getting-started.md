@@ -8,15 +8,21 @@ LiteWire DI supports PHP 7.4 and PHP 8.0–8.5.
 
 ## Installation
 
-Install it with Composer:
+**Install with Composer:**
 
 ```bash
 composer require doiftrue/litewire-di
 ```
 
-Alternatively, copy [`Container.php`](https://github.com/doiftrue/litewire-di/blob/main/Container.php) into your project.
+**Namespace prefix:**
 
-::: warning Use your own namespace
+To give the package a project-specific namespace, see [Namespaces](/guide/namespaces). This is useful when using LiteWire DI in a WordPress plugin or another shared PHP environment.
+
+**Manual install:**
+
+Copy [`Container.php`](https://github.com/doiftrue/litewire-di/blob/main/Container.php) into your project.
+
+::: warning
 When copying the file, change its `Kama\LiteWireDI` namespace to one owned by your project so it cannot conflict with another copied version.
 :::
 
@@ -25,13 +31,13 @@ When copying the file, change its `Kama\LiteWireDI` namespace to one owned by yo
 ```php
 use Kama\LiteWireDI\Container;
 
-final class Logger {
+class Logger {
 	public function log( string $message ): void {
 		error_log( $message );
 	}
 }
 
-final class ReportService {
+class ReportService {
 	public function __construct(
 		private readonly Logger $logger,
 	) {}
@@ -45,33 +51,37 @@ $container = new Container();
 $container->get( ReportService::class )->generate();
 ```
 
-Neither class is registered. `get()` reflects `ReportService`, sees its `Logger` dependency, creates it, and stores the completed `ReportService` as a shared instance.
+Neither class needs to be registered. When you ask for `ReportService`, the container:
+
+1. Sees that `ReportService` needs a `Logger`.
+   - Creates the `Logger` automatically.
+2. Creates `ReportService` with that `Logger`.
+3. Keeps the `ReportService` instance and returns it on later calls to `get()`.
 
 ## Features
 
-- Keep the whole container in a single PHP file.
-- Use no external dependencies.
-- Register existing objects, classes, closure factories, and configured constructor parameters with `set()`.
-- Autowire registered and unregistered classes.
-- Return shared service instances with `get()`.
-- Create a new instance every time with `make()`.
-- Pass named runtime parameters to `make()`.
-- Check whether classes and interfaces can be resolved with `has()`.
-- Use an object-first design with class and interface names as service IDs.
-- Use default values for scalar constructor parameters.
-- Use the modern Reflection API on PHP 8.
-- Inject the container itself as a dependency.
-- Cache Reflection data inside each container instance.
-- Detect circular dependencies and show the full resolution chain.
+- Keep the whole container in a **single PHP file**.
+- Use **no external dependencies**.
+- Register **objects, classes, closure factories, and constructor parameters** with `set()`.
+- **Autowire** registered and unregistered classes.
+- Return **shared instances** with `get()`.
+- Create a **new instance every time** with `make()`.
+- Pass **named runtime parameters** to `make()`.
+- Check whether classes and interfaces can be **resolved** with `has()`.
+- Use an **object-first design** with class and interface names as service IDs.
+- Use **default values** for scalar constructor parameters.
+- Use the modern **Reflection API** on PHP 8.
+- Inject **the container itself** as a dependency.
+- **Cache Reflection data** inside each container instance.
+- Detect **circular dependencies** and show the full resolution chain.
 
 ## Tradeoffs
 
-- Configuration goes through parameters attached to concrete class definitions, factories, runtime parameters, or config objects. There is no standalone scalar storage.
-- Invokable objects can be wrapped in closures, but are not factories automatically.
-- Configuration is normal PHP code. There are no attributes or DSL (domain-specific language).
+- **Service IDs must be class or interface names.** Arbitrary string IDs such as `logger` are not supported.
+- **No standalone scalar storage.** Configure scalar values through parameters attached to concrete class definitions, factories, runtime parameters, or config objects.
+- **Invokable objects are not factories automatically.** Wrap an invokable object in a closure to use it as a factory.
+- **Configuration is PHP code.** There are no attributes or DSL (domain-specific language).
 
----
-
-::: info Next step
-Continue with [using the container](/guide/using-the-container) to learn when to use each public method.
+::: info
+See [Limitations](/reference/limitations) for more details.
 :::

@@ -7,6 +7,7 @@ namespace Kama\LiteWireDI\Tests;
 use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
 use Kama\LiteWireDI\Container;
+use Kama\LiteWireDI\Tests\Fixtures\ClassWithDeps;
 use Kama\LiteWireDI\Tests\Fixtures\SimpleClass;
 use Kama\LiteWireDI\Tests\Fixtures\SomeInterface;
 use Kama\LiteWireDI\Tests\Fixtures\AbstractService;
@@ -71,6 +72,20 @@ final class SetTest extends TestCase {
 		$this->container->set( SimpleClass::class, new stdClass() );
 
 		self::assertInstanceOf( stdClass::class, $this->container->get( SimpleClass::class ) );
+	}
+
+	public function test__replacing_dependency_does_not_change_existing_services(): void {
+		$old_dependency = new SimpleClass();
+		$this->container->set( SimpleClass::class, $old_dependency );
+		$service = $this->container->get( ClassWithDeps::class );
+
+		$new_dependency = new SimpleClass();
+		$this->container->set( SimpleClass::class, $new_dependency );
+
+		self::assertSame( $new_dependency, $this->container->get( SimpleClass::class ) );
+		self::assertSame( $old_dependency, $service->simple );
+		self::assertSame( $service, $this->container->get( ClassWithDeps::class ) );
+		self::assertSame( $new_dependency, $this->container->make( ClassWithDeps::class )->simple );
 	}
 
 	// ────────────────────────────────────────────────────────────────────

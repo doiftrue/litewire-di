@@ -24,6 +24,8 @@ Install with Composer:
 composer require doiftrue/litewire-di
 ```
 
+For WordPress plugins and other shared environments, [prefix the namespace](https://doiftrue.github.io/litewire-di/guide/namespaces) to avoid conflicts.
+
 Or copy the single [`Container.php`](Container.php) file into your project. When copying it, change the `Kama\LiteWireDI` namespace to one owned by your project to avoid collisions with another copy of the container.
 
 
@@ -42,9 +44,11 @@ Features
 - Register existing objects, classes, closure factories, and configured constructor parameters with `set()`.
 - Autowire registered and unregistered classes.
 - Return shared service instances with `get()`.
-- Create fresh instances with `make()`.
+- Create objects without storing them with `make()`.
 - Pass named runtime parameters to `make()`.
-- Check whether classes and interfaces can be resolved with `has()`.
+- Check registered services and automatically resolvable classes with `has()`.
+- Use default values for optional constructor and factory parameters.
+- Cache reflection data inside each container instance.
 - Detect circular dependencies and show the full resolution chain.
 - Use an object-first design with class and interface names as service IDs.
 
@@ -54,7 +58,7 @@ API
 
 Four public methods:
 
-- `has()` checks if a service can be resolved.
+- `has()` checks whether a service is registered, stored, or autowireable.
 - `set()` registers an object, class, factory, or named parameters for an instantiable class.
 - `get()` returns a shared object.
 - `make()` creates a fresh object.
@@ -77,96 +81,208 @@ Examples
 ```php
 use Kama\LiteWireDI\Container;
 
-final class Logger {
-	public function log( string $message ): void {
+class Logger {
+	public function write( string $message ): void {
 		error_log( $message );
 	}
 }
 
-final class Service {
-	public function __construct(
-		private readonly Logger $logger,
-	) {}
+class ReportService {
+	public Logger $logger;
 
-	public function run(): void {
-		$this->logger->log( 'Service started.' );
+	public function __construct( Logger $logger ) {
+		$this->logger = $logger;
+	}
+
+	public function generate(): void {
+		$this->logger->write( 'Report generated.' );
 	}
 }
 
 $container = new Container();
-$service = $container->get( Service::class );
-$service->run(); // Logger is created automatically
+$report = $container->get( ReportService::class );
+$report->generate();
 ```
 
+LiteWire DI creates `ReportService` and its `Logger` dependency automatically.
+
+### Check for a service
+
+`has()` checks registered services and autowireable classes, including their dependencies.
+
+```php
+$container->has( ReportService::class ); // true
+$container->has( 'Unknown' );           // false
+```
+
+### Shared services and new objects
+
+`get()` reuses the object. `make()` creates a new object but shares its class dependencies:
+
+```php
+$first = $container->get( ReportService::class );
+$second = $container->get( ReportService::class );
+$fresh = $container->make( ReportService::class );
+
+$first === $second;               // true
+$first === $fresh;                // false
+$first->logger === $fresh->logger; // true
+```
 
 ### Interface binding
 
-```php
-$container->set( Logger_Interface::class, File_Logger::class );
-
-$logger = $container->get( Logger_Interface::class );
-```
-
-### Configured parameters
-
-Pass an associative array to register named constructor parameters for an instantiable class. Missing class dependencies are autowired. `get()` creates and stores the configured service.
+Register an implementation when a constructor requests an interface:
 
 ```php
-final class Plugin {
-	public function __construct(
-		private readonly string $main_file,
-		private readonly Options $options,
-	) {}
+interface ReportFormatter {
+	public function format( string $report ): string;
 }
 
-$container->set( Plugin::class, [
-	'main_file' => __FILE__,
-] );
+class PlainFormatter implements ReportFormatter {
+	public function format( string $report ): string {
+		return $report;
+	}
+}
 
-$plugin = $container->get( Plugin::class );
+$container->set( ReportFormatter::class, PlainFormatter::class );
+$formatter = $container->get( ReportFormatter::class ); // PlainFormatter
 ```
 
-Configured parameters cannot be registered directly for an interface because the array does not identify an implementation. Use a class binding when the implementation needs no scalar configuration; otherwise use a factory.
-
-### Factory registration
-
-Factories must return an object. Their parameters are autowired too.
+### Register an existing object
 
 ```php
-$container->set( Mailer::class, static function ( Logger $logger ) {
-	return new Mailer( $logger );
-} );
+$formatter = new PlainFormatter();
+$container->set( ReportFormatter::class, $formatter );
 
-$shared_mailer = $container->get( Mailer::class );
-$fresh_mailer = $container->make( Mailer::class );
+$container->get( ReportFormatter::class ) === $formatter; // true
 ```
+
+Use `get()` for registered objects; `make()` cannot create them.
+
+### Configure constructor parameters
+
+Register required values such as paths or email addresses. Class dependencies are autowired:
+
+```php
+interface MailerService {}
+
+class Mailer implements MailerService {
+	public Logger $logger;
+	public string $from;
+
+	public function __construct( Logger $logger, string $from ) {
+		$this->logger = $logger;
+		$this->from = $from;
+	}
+}
+
+$container->set( Mailer::class, [
+	'from' => 'default@example.com',
+] );
+
+$mailer = $container->get( Mailer::class );
+```
+
+Parameter arrays require an instantiable class. Optional parameters use their defaults.
 
 ### Runtime parameters
 
-`make()` creates a fresh root object and accepts named constructor values.
+Pass named values to `make()` to override parameters registered with `set()`:
 
 ```php
-final class Mailer {
-	public function __construct(
-		private readonly Logger $logger,
-		private readonly string $from,
-	) {}
-}
-
 $mailer = $container->make( Mailer::class, [
 	'from' => 'admin@example.com',
 ] );
+
+$mailer->from; // 'admin@example.com'
 ```
 
-When the class has configured parameters from `set()`, `make()` uses them as defaults. Parameters passed directly to `make()` take priority.
+Unknown parameter names throw `ContainerException`.
+
+### Register a factory
+
+A factory creates an object and receives autowired dependencies:
+
+```php
+$container->set( MailerService::class, static function ( Logger $logger, string $from = 'default@example.com' ) {
+	return new Mailer( $logger, strtolower( $from ) );
+} );
+
+$sharedMailer = $container->get( MailerService::class ); // Uses the default address
+
+$mailer = $container->make( MailerService::class, [
+	'from' => 'ADMIN@example.com',
+] );
+
+$mailer->from; // 'admin@example.com'
+```
+
+`make()` uses the factory's parameter names. `get()` stores the result; `make()` calls the factory each time. A factory must return an object and may return the same object repeatedly.
+
+A factory can receive the container and use `make()` to provide values while autowiring dependencies:
+
+```php
+$container->set( MailerService::class, static function ( Container $container ) {
+	return $container->make( Mailer::class, [
+		'from' => 'reports@example.com',
+	] );
+} );
+
+$reportMailer = $container->get( MailerService::class );
+```
+
+Use a different class ID inside the factory to avoid a circular dependency.
+
+### Replace a service
+
+Calling `set()` again replaces the service. Existing objects keep their original dependencies:
+
+```php
+$report = $container->get( ReportService::class );
+$oldLogger = $report->logger;
+
+$newLogger = new Logger();
+$container->set( Logger::class, $newLogger );
+
+$container->get( Logger::class ) === $oldLogger;         // false
+$container->get( Logger::class ) === $newLogger;         // true
+$report->logger === $oldLogger;                          // true
+$container->get( ReportService::class ) === $report;     // true
+$container->make( ReportService::class )->logger === $newLogger; // true
+```
+
+### Circular dependencies
+
+Circular dependencies throw an exception with the resolution chain:
+
+```php
+class ServiceA {
+	public function __construct( ServiceB $service ) {}
+}
+
+class ServiceB {
+	public function __construct( ServiceA $service ) {}
+}
+
+try {
+	$container->get( ServiceA::class );
+}
+catch ( \Kama\LiteWireDI\ContainerException $e ) {
+	echo $e->getMessage(); // Circular dependency detected: ServiceA → ServiceB → ServiceA
+}
+```
+
+See [Usage](https://doiftrue.github.io/litewire-di/guide/usage) for more examples.
 
 
 Documentation
 -------------
 
 - [Full documentation](https://doiftrue.github.io/litewire-di/)
-- [Configuration guide](https://doiftrue.github.io/litewire-di/guide/configuration-and-factories)
+- [Usage and service registration](https://doiftrue.github.io/litewire-di/guide/usage)
+- [App config options](https://doiftrue.github.io/litewire-di/guide/app-config-options)
 - [WordPress plugin guide](https://doiftrue.github.io/litewire-di/guide/full-wordpress)
+- [Namespace prefix](https://doiftrue.github.io/litewire-di/guide/namespaces)
 - [Detailed benchmark report](benchmarks/README.md)
 
 

@@ -16,7 +16,7 @@ The container helps with this object setup:
 - shared objects are reused;
 - tests can create a class with fake dependencies without loading WordPress.
 
-::: info Keep the container at startup
+::: info
 Use the container during plugin startup. Do not pass it into every class. Normal classes should ask for their real dependencies in the constructor.
 :::
 
@@ -48,7 +48,7 @@ my-plugin/lib/Container.php
 
 The plugin now owns its copy of the container. Users do not need to install LiteWire DI or run Composer on their WordPress site.
 
-::: warning Updating a copied container
+::: warning
 When you update LiteWire DI, replace this file with the new version and test the plugin. Keep the license and source information at the top of the file.
 :::
 
@@ -97,7 +97,7 @@ function example_my_plugin_init(): void {
 
 This is the composition root: the one place where the application is assembled. Interface bindings and project values belong here.
 
-::: warning Configure before resolving
+::: warning
 Configure everything before calling `get()`. `get()` stores shared objects, so changing a definition later will not update objects which were already created.
 :::
 
@@ -132,7 +132,7 @@ Create `src/PluginConfig.php`:
 <?php
 namespace Example\MyPlugin;
 
-final readonly class PluginConfig {
+readonly class PluginConfig {
 	public function __construct(
 		public string $plugin_file,
 		public string $option_name,
@@ -162,7 +162,7 @@ Create `src/Logger/WordPressLogger.php`:
 <?php
 namespace Example\MyPlugin\Logger;
 
-final class WordPressLogger implements Logger {
+class WordPressLogger implements Logger {
 	public function info( string $message ): void {
 		error_log( '[LiteWire DI Example] ' . $message );
 	}
@@ -182,7 +182,7 @@ namespace Example\MyPlugin;
 
 use Example\MyPlugin\Logger\Logger;
 
-final class SettingsPage {
+class SettingsPage {
 	public function __construct(
 		private readonly PluginConfig $config,
 		private readonly Logger $logger,
@@ -265,7 +265,7 @@ Create `src/AdminNotice.php`:
 
 namespace Example\MyPlugin;
 
-final class AdminNotice {
+class AdminNotice {
 	public function __construct(
 		private readonly PluginConfig $config,
 	) {}
@@ -301,7 +301,7 @@ Create `src/Plugin.php`:
 
 namespace Example\MyPlugin;
 
-final class Plugin {
+class Plugin {
 	public function __construct(
 		private readonly SettingsPage $settings_page,
 		private readonly AdminNotice $admin_notice,

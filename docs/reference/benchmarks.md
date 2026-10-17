@@ -39,12 +39,12 @@ The 100- and 1,000-resolution figures are simple linear illustrations based on t
 
 `get__cold` includes reflection, dependency discovery, object construction, and storage of the shared result. `get__stored` measures a later lookup. `make()` always creates a fresh root object; its cached benchmark follows an earlier resolution in the same container.
 
-::: info About memory figures
+::: info
 Memory peak is measured for the complete benchmark process, not as memory allocated by one container call. Do not multiply it by the number of services.
 :::
 
 ---
 
-::: info Additional information
+::: info
 The authoritative source for the full benchmark methodology and subject descriptions is [`benchmarks/README.md`](https://github.com/doiftrue/litewire-di/blob/main/benchmarks/README.md).
 :::
